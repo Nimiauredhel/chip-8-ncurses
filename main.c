@@ -4,6 +4,42 @@
 
 #define PROGRAM_START 0x200
 
+void init_display(Chip8_t *chip8)
+{
+    initscr();
+    start_color();
+    init_pair(1, COLOR_WHITE, COLOR_GREEN); // 1 is on
+    init_pair(2, COLOR_WHITE, COLOR_BLUE); // 2 is off
+    explicit_bzero(chip8->DISPLAY, 256);
+}
+
+void render_display(Chip8_t *chip8)
+{
+    //char c[8] = {'0', '1', '2', '3', '4', '5', '6', '7'};
+    uint8_t byte;
+    uint8_t pixel;
+
+    clear();
+
+    for (int row = 0; row < 32; row++)
+    {
+        for (int col = 0; col < 8; col++)
+        {
+            byte = chip8->DISPLAY[col + (row * 8)];
+
+            for (int bit = 0; bit < 8; bit++)
+            {
+                pixel = 2 - ((byte >> bit) & 0x01);
+                attron(COLOR_PAIR(pixel));
+                mvaddch(row, bit + (col * 8), ' ');//c[bit]);
+                attroff(COLOR_PAIR(pixel));
+            }
+        }
+    }
+
+    refresh();
+}
+
 size_t load_rom(char *rom_path, uint8_t *dest_ptr)
 {
     FILE *file;
@@ -40,7 +76,9 @@ void run(Chip8_t *chip8)
     uint8_t read_bytes[2] = {0};
     uint8_t read_nibbles[4] = {0};
 
-    while (chip8->PC < 4096 && chip8->PC >= 0 && !chip8->quit && !should_terminate)
+    init_display(chip8);
+
+    while (chip8->PC < 4096 && chip8->PC >= 0 && !should_terminate)
     {
         usleep(16000); // 60hz
         
@@ -59,11 +97,14 @@ void run(Chip8_t *chip8)
         printf("[%u] ", chip8->PC);
         print_instruction(read_bytes, read_nibbles, op_idx);
         execute_instruction(chip8, read_bytes, read_nibbles, op_idx);
+        render_display(chip8);
 
         chip8->PC += 2;
     }
 
+    endwin();
     printf("Program over!\n");
+    sleep(1);
 }
 
 int main(int argc, char *argv[])
@@ -91,7 +132,7 @@ int main(int argc, char *argv[])
 
     sleep(1);
 
-    load_sprites(&chip8, default_sprites, 0x00);
+    load_sprites(&chip8, default_sprites, PROGRAM_START - 80);
     chip8.PC = PROGRAM_START;
     run(&chip8);
     //disassemble(&chip8, PROGRAM_START + rom_size);
