@@ -2,24 +2,36 @@
 
 void print_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx)
 {
-    switch(instructions[op_idx].argc)
+    static uint16_t word_arg = 0;
+
+    switch(instructions[op_idx].schema)
     {
-        case 1:
-            printf(instructions[op_idx].format, nibbles[1]);
-            break;
-        case 2:
-            printf(instructions[op_idx].format, nibbles[1], nibbles[2]);
-            break;
-        case 3:
-            printf(instructions[op_idx].format, nibbles[1], nibbles[2], nibbles[3]);
-            break;
-        case 0:
-        default:
-            printf("%s", instructions[op_idx].format);
-            break;
+    case OPSCH_NNN:
+        word_arg = (nibbles[1] << 8) + (nibbles[2] << 4) + nibbles[3];
+        printf(instructions[op_idx].format, word_arg);
+        break;
+    case OPSCH_XKK:
+        printf(instructions[op_idx].format, nibbles[1], bytes[1]);
+        break;
+    case OPSCH_XY_:
+        printf(instructions[op_idx].format, nibbles[1], nibbles[2]);
+        break;
+    case OPSCH_XYN:
+        printf(instructions[op_idx].format, nibbles[1], nibbles[2], nibbles[3]);
+        break;
+    case OPSCH_X__:
+        printf(instructions[op_idx].format, nibbles[1]);
+        break;
+    case OPSCH___N:
+        printf(instructions[op_idx].format, nibbles[3], bytes[1]);
+        break;
+    case OPSCH_NONE:
+    default:
+        printf("%s", instructions[op_idx].format);
+        break;
     }
 
-    printf(" ~ 0x%02X%02X ~ 0x %1X %1X %1X %1X \n", bytes[0], bytes[1], nibbles[0], nibbles[1], nibbles[2], nibbles[3]);
+    printf(" ~ bytes 0x%02X%02X ~ nibbles 0x%1X%1X%1X%1X \n", bytes[0], bytes[1], nibbles[0], nibbles[1], nibbles[2], nibbles[3]);
 }
 
 void disassemble(uint8_t *program_ptr, size_t program_size)

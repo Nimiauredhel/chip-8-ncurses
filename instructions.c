@@ -1,61 +1,62 @@
 #include "instructions.h"
 
-const Instruction_t instructions[] =
+const Instruction_t instructions[46] =
 {
     { 1, "UNKNOWN (%4x)" }, // 0nnn SYS addr - legacy, ignore
                       //
     // chip 8 instructions
-    { 1, "SYS %4x" }, // 0nnn SYS addr - legacy, ignore
-    { 0, "CLS" }, // CLS - clear screen
-    { 0, "RET" }, // RET - return from subroutine
+    { OPSCH_NONE, "SYS %4x" }, // 0nnn SYS addr - legacy, ignore
+    { OPSCH_NONE, "CLS" }, // CLS - clear screen
+    { OPSCH_NONE, "RET" }, // RET - return from subroutine
 
-    { 1, "JP %4x" }, // 1nnn JP addr - set PC to nnn
-    { 1, "CALL %4x" }, // 2nnn CALL addr - call subroutine
-    { 2, "SE V%u, %d" }, // 3xkk SE Vx, byte - skip next if Vx == kk
-    { 2, "SNE V%u, %d" },
-    { 2, "SE V%u, V%u" },
-    { 2, "LD V%u, %d" },
-    { 2, "ADD V%u, %d" }, // 7xkk ADD Vx, byte - set Vx = Vx + kk
+    { OPSCH_NNN, "JP %d" }, // 1nnn JP addr - set PC to nnn
+    { OPSCH_NNN, "CALL %d" }, // 2nnn CALL addr - call subroutine
+    { OPSCH_XKK, "SE V%u, %d" }, // 3xkk SE Vx, byte - skip next if Vx == kk
+    { OPSCH_XKK, "SNE V%u, %d" },
+    { OPSCH_XY_, "SE V%u, V%u" },
+    { OPSCH_XKK, "LD V%u, %d" },
+    { OPSCH_XKK, "ADD V%u, %d" }, // 7xkk ADD Vx, byte - set Vx = Vx + kk
 
-    { 2, "LD V%u, V%u" }, // 8xy0 LD Vx, Vy - store value of Vy in Vx
-    { 2, "OR V%u, V%u" },
-    { 2, "AND V%u, V%u" },
-    { 2, "XOR V%u, V%u" },
-    { 2, "ADD V%u, V%u" },
-    { 2, "SUB V%u, V%u" },
-    { 2, "SHR V%u {, V%u}" },
-    { 2, "SUBN V%u, V%u" },
-    { 2, "SHL V%u {, V%u}" }, // 8xye SHL Vx {, Vy}
+    { OPSCH_XY_, "LD V%u, V%u" }, // 8xy0 LD Vx, Vy - store value of Vy in Vx
+    { OPSCH_XY_, "OR V%u, V%u" },
+    { OPSCH_XY_, "AND V%u, V%u" },
+    { OPSCH_XY_, "XOR V%u, V%u" },
+    { OPSCH_XY_, "ADD V%u, V%u" },
+    { OPSCH_XY_, "SUB V%u, V%u" },
+    { OPSCH_XY_, "SHR V%u {, V%u}" },
+    { OPSCH_XY_, "SUBN V%u, V%u" },
+    { OPSCH_XY_, "SHL V%u {, V%u}" }, // 8xye SHL Vx {, Vy}
 
-    { 2, "SNE V%u, V%u" }, // 9xy0 SNE Vx, Vy
+    { OPSCH_XY_, "SNE V%u, V%u" }, // 9xy0 SNE Vx, Vy
 
-    { 1, "LD I, %4x" }, // Annn LD I, addr
-    { 1, "JP V0, %4x" }, // Bnnn JP V0, addr
-    { 2, "RND V%u, %d" }, // Cxkk RND Vx, byte
-    { 3, "DRW V%u, V%u, %d" }, // Dxyn DRW Vx, Vy, nibble
+    { OPSCH_NNN, "LD I, %d" }, // Annn LD I, addr
+    { OPSCH_NNN, "JP V0, %d" }, // Bnnn JP V0, addr
+    { OPSCH_XKK, "RND V%u, %d" }, // Cxkk RND Vx, byte
+    { OPSCH_XYN, "DRW V%u, V%u, %d" }, // Dxyn DRW Vx, Vy, nibble
 
-    { 1, "SKP Vx" }, // Ex9E SKP Vx
-    { 1, "SKNP Vx" }, // ExA1 SKNP Vx
+    { OPSCH_X__, "SKP Vx" }, // Ex9E SKP Vx
+    { OPSCH_X__, "SKNP Vx" }, // ExA1 SKNP Vx
 
-    { 1, "LD V%u, DT" }, // Fx07 LD Vx, DT
-    { 1, "LD V%u, K" },
-    { 1, "LD DT, V%u" },
-    { 1, "LD ST, V%u" },
-    { 1, "ADD I, V%u" },
-    { 1, "LD F, V%u" },
-    { 1, "LD B, V%u" },
-    { 1, "LD [I], V%u" },
-    { 1, "LD V%u, [I]" },
+    { OPSCH_X__, "LD V%u, DT" }, // Fx07 LD Vx, DT
+    { OPSCH_X__, "LD V%u, K" },
+    { OPSCH_X__, "LD DT, V%u" },
+    { OPSCH_X__, "LD ST, V%u" },
+    { OPSCH_X__, "ADD I, V%u" },
+    { OPSCH_X__, "LD F, V%u" },
+    { OPSCH_X__, "LD B, V%u" },
+    { OPSCH_X__, "LD [I], V%u" },
+    { OPSCH_X__, "LD V%u, [I]" },
 
     // super chip 48 instructions
-    { 1, "SCD %d" }, // SCD nibble
-    { 0, "SCR" },
-    { 0, "SCL" },
-    { 0, "EXIT" },
-    { 0, "LOW" },
-    { 0, "HIGH" },
+    { OPSCH___N, "SCD %d" }, // SCD nibble
+    { OPSCH_NONE, "SCR" },
+    { OPSCH_NONE, "SCL" },
+    { OPSCH_NONE, "EXIT" },
+    { OPSCH_NONE, "LOW" },
+    { OPSCH_NONE, "HIGH" },
 
-    { 1, "LD HF, V%u" },
-    { 1, "LD R, V%u" },
-    { 1, "LD V%u, R" },
+    { OPSCH_XY_, "DRW V%u, V%u, 0" },
+    { OPSCH_X__, "LD HF, V%u" },
+    { OPSCH_X__, "LD R, V%u" },
+    { OPSCH_X__, "LD V%u, R" },
 };
