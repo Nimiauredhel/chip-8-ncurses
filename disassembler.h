@@ -4,7 +4,7 @@
 #include "common.h"
 #include "parser.h"
 
-void disassemble(uint8_t *program_ptr, uint16_t program_size);
+void disassemble(uint8_t *program_ptr, size_t program_size);
 
 void print_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx);
 

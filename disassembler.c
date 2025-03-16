@@ -1,8 +1,13 @@
 #include "disassembler.h"
 
-void disassemble(uint8_t *program_ptr, uint16_t program_size)
+void print_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx)
 {
-    uint8_t pc = 0;
+    printf("0x%02X%02X\n", bytes[0], bytes[1]);
+}
+
+void disassemble(uint8_t *program_ptr, size_t program_size)
+{
+    size_t pc = 0;
     OpcodeIndex_t op_idx = OP_UNKNOWN;
     uint8_t read_bytes[2] = {0};
     uint8_t read_nibbles[4] = {0};
@@ -18,11 +23,9 @@ void disassemble(uint8_t *program_ptr, uint16_t program_size)
         read_nibbles[3] = (read_bytes[1] << 4) >> 4;
 
         op_idx = parse_instruction(read_bytes, read_nibbles);
+        printf("[%lu] ", pc);
+        print_instruction(read_bytes, read_nibbles, op_idx);
 
         pc += 2;
     }
-}
-
-void print_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx)
-{
 }
