@@ -40,7 +40,7 @@ void run(Chip8_t *chip8)
     uint8_t read_bytes[2] = {0};
     uint8_t read_nibbles[4] = {0};
 
-    while (!chip8->quit)
+    while (chip8->PC < 4096 && chip8->PC >= 0 && !chip8->quit && !should_terminate)
     {
         read_bytes[0] = chip8->RAM[chip8->PC];
         read_bytes[1] = chip8->RAM[chip8->PC + 1];
@@ -55,10 +55,15 @@ void run(Chip8_t *chip8)
 
         chip8->PC += 2;
     }
+
+    printf("Program over!\n");
 }
 
 int main(int argc, char *argv[])
 {
+    initialize_signal_handler();
+    initialize_random_seed();
+
     printf("Hello!\n");
     usleep(500000);
 
@@ -73,14 +78,15 @@ int main(int argc, char *argv[])
 
     char *rom_path = argv[1];
 
-    size_t rom_size = load_rom(rom_path, chip8.RAM + PROGRAM_START);
+    //size_t rom_size = load_rom(rom_path, chip8.RAM + PROGRAM_START);
+    load_rom(rom_path, chip8.RAM + PROGRAM_START);
     printf("ROM loaded to memory.\n");
 
     sleep(1);
 
     chip8.PC = PROGRAM_START;
-    //run(&chip8);
-    disassemble(&chip8, PROGRAM_START + rom_size);
+    run(&chip8);
+    //disassemble(&chip8, PROGRAM_START + rom_size);
 
     return EXIT_SUCCESS;
 }

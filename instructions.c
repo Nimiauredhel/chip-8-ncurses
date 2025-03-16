@@ -1,4 +1,6 @@
+#include "common.h"
 #include "instructions.h"
+#include "disassembler.h"
 
 const Instruction_t instructions[46] =
 {
@@ -63,54 +65,193 @@ const Instruction_t instructions[46] =
 
 void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx)
 {
+    static uint16_t temp = 0;
+
     switch (op_idx)
     {
         case OP_UNKNOWN:
         case OP_SYS_ADDR:
+            break;
         case OP_CLS:
+            // TODO
+            break;
         case OP_RET:
-        case OP_JP_ADDR:
+            chip8->PC = chip8->STACK_RET[chip8->SP];
+            chip8->ST--;
+            break;
         case OP_CALL_ADDR:
+            chip8->SP++;
+            chip8->STACK_RET[chip8->SP] = chip8->PC;
+            // intentional fall through!
+        case OP_JP_ADDR:
+            chip8->PC =
+            (nibbles[1] << 8)
+            + (nibbles[2] << 4)
+            + nibbles[3];
+            chip8->PC -= 2;
+            break;
         case OP_SE_VX_BYTE:
+            if (chip8->V_REGS[nibbles[1]]
+            == bytes[1]) chip8->PC += 2;
+            break;
         case OP_SNE_VX_BYTE:
+            if (chip8->V_REGS[nibbles[1]]
+            != bytes[1]) chip8->PC += 2;
+            break;
         case OP_SE_VX_VY:
+            if (chip8->V_REGS[nibbles[1]]
+            == chip8->V_REGS[nibbles[2]]) chip8->PC += 2;
+            break;
         case OP_LD_VX_BYTE:
+            chip8->V_REGS[nibbles[1]]
+            = bytes[1];
+            break;
         case OP_ADD_VX_BYTE:
+            chip8->V_REGS[nibbles[1]]
+            += bytes[1];
+            break;
         case OP_LD_VX_VY:
+            chip8->V_REGS[nibbles[1]]
+            = chip8->V_REGS[nibbles[2]];
+            break;
         case OP_OR_VX_VY:
+            chip8->V_REGS[nibbles[1]]
+            |= chip8->V_REGS[nibbles[2]];
+            break;
         case OP_AND_VX_VY:
+            chip8->V_REGS[nibbles[1]]
+            &= chip8->V_REGS[nibbles[2]];
+            break;
         case OP_XOR_VX_VY:
+            chip8->V_REGS[nibbles[1]]
+            ^= chip8->V_REGS[nibbles[2]];
+            break;
         case OP_ADD_VX_VY:
+            temp = chip8->V_REGS[nibbles[1]]
+            + chip8->V_REGS[nibbles[2]];
+            chip8->V_REGS[15] = temp > 255;
+            chip8->V_REGS[nibbles[1]] = (uint8_t)temp;
+            break;
         case OP_SUB_VX_VY:
+            chip8->V_REGS[15] = chip8->V_REGS[nibbles[1]]
+            > chip8->V_REGS[nibbles[2]];
+            chip8->V_REGS[nibbles[1]]
+            -= chip8->V_REGS[nibbles[2]];
+            break;
         case OP_SHR_VX_VY:
+            chip8->V_REGS[15] = nibbles[1] & 0x01;
+            chip8->V_REGS[nibbles[1]] /= 2;
+            break;
         case OP_SUBN_VX_VY:
+            chip8->V_REGS[15] = chip8->V_REGS[nibbles[2]]
+            > chip8->V_REGS[nibbles[1]];
+            chip8->V_REGS[nibbles[1]]
+            = chip8->V_REGS[nibbles[2]] - chip8->V_REGS[nibbles[1]];
+            break;
         case OP_SHL_VX_VY:
+            chip8->V_REGS[15] = nibbles[1] & 0x01;
+            chip8->V_REGS[nibbles[1]] *= 2;
+            break;
         case OP_SNE_VX_VY:
+            if (chip8->V_REGS[nibbles[1]]
+            != chip8->V_REGS[nibbles[2]]) chip8->PC += 2;
+            break;
         case OP_LD_I_ADDR:
+            chip8->I_REG =
+            (nibbles[1] << 8)
+            + (nibbles[2] << 4)
+            + nibbles[3];
+            break;
         case OP_JP_V0_ADDR:
+            chip8->PC =
+            (nibbles[1] << 8)
+            + (nibbles[2] << 4)
+            + nibbles[3];
+            chip8->PC += chip8->V_REGS[0];
+            chip8->PC -= 2;
+            break;
         case OP_RND_VX_BYTE:
+            chip8->V_REGS[nibbles[1]]
+            = bytes[1] | random_range(0, 255);
+            break;
         case OP_DRW_VX_VY_NIBBLE:
+            // TODO
+            break;
         case OP_SKP_VX:
+            // TODO
+            break;
         case OP_SKNP_VX:
+            // TODO
+            break;
         case OP_LD_VX_DT:
+            chip8->V_REGS[nibbles[1]]
+            = chip8->DT;
+            break;
         case OP_LD_VX_K:
+            // TODO
+            break;
         case OP_LD_DT_VX:
+            chip8->DT
+            = chip8->V_REGS[nibbles[1]];
+            break;
         case OP_LD_ST_VX:
+            chip8->ST
+            = chip8->V_REGS[nibbles[1]];
+            break;
         case OP_ADD_I_VX:
+            chip8->I_REG
+            += chip8->V_REGS[nibbles[1]];
         case OP_LD_F_VX:
+            // TODO soon
+            break;
         case OP_LD_B_VX:
+            // TODO
+            break;
         case OP_LD_I_VX:
+            for (int i = 0; i <= nibbles[1]; i++)
+            {
+                chip8->RAM[chip8->I_REG + i]
+                = chip8->V_REGS[i];
+            }
+            break;
         case OP_LD_VX_I:
+            for (int i = 0; i <= nibbles[1]; i++)
+            {
+                chip8->V_REGS[i]
+                = chip8->RAM[chip8->I_REG + i];
+            }
+            break;
         case OP_SUPER_SCD_NIBBLE:
+            // TODO
+            break;
         case OP_SUPER_SCR:
+            // TODO
+            break;
         case OP_SUPER_SCL:
+            // TODO
+            break;
         case OP_SUPER_EXIT:
+            // TODO
+            break;
         case OP_SUPER_LOW:
+            // TODO
+            break;
         case OP_SUPER_HIGH:
+            // TODO
+            break;
         case OP_SUPER_DRW_VX_VY_0:
+            // TODO
+            break;
         case OP_SUPER_LD_HF_VX:
+            // TODO
+            break;
         case OP_SUPER_LD_R_VX:
+            // TODO
+            break;
         case OP_SUPER_LD_VX_R:
-      break;
+            // TODO
+            break;
     }
+
+    disassemble(chip8, chip8->PC + 2);
 }
