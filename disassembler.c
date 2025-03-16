@@ -43,7 +43,7 @@ void disassemble(Chip8_t *chip8, uint16_t program_end)
     while (chip8->PC < program_end)
     {
         read_bytes[0] = chip8->RAM[chip8->PC];
-        read_bytes[1] = chip8->RAM[chip8->PC];
+        read_bytes[1] = chip8->RAM[chip8->PC + 1];
 
         read_nibbles[0] = read_bytes[0] >> 4;
         read_nibbles[1] = read_bytes[0] - (read_nibbles[0] << 4);
