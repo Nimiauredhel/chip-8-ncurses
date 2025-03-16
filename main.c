@@ -1,7 +1,10 @@
 #include "common.h"
 #include "disassembler.h"
+#include "data.h"
 
-size_t load_rom(char *rom_path, uint8_t **dest_ptr)
+#define PROGRAM_START 0x200
+
+size_t load_rom(char *rom_path, uint8_t *dest_ptr)
 {
     FILE *file;
     size_t file_size;
@@ -24,15 +27,8 @@ size_t load_rom(char *rom_path, uint8_t **dest_ptr)
     printf("ROM size: %lu bytes.\n", file_size);
 
     rewind(file);
-    *dest_ptr = malloc(file_size+1);
-
-    if (*dest_ptr == NULL)
-    {
-        perror("Failed to allocate space for ROM");
-        exit(EXIT_SUCCESS);
-    }
     
-    fread(*dest_ptr, 1, file_size, file);
+    fread(dest_ptr, 1, file_size, file);
     fclose(file);
 
     return file_size;
@@ -50,17 +46,16 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
-    char *rom_path = argv[1];
-    uint8_t *rom_ptr = NULL;
+    Chip8_t chip8 = {0};
 
-    size_t rom_size = load_rom(rom_path, &rom_ptr);
+    char *rom_path = argv[1];
+
+    size_t rom_size = load_rom(rom_path, chip8.RAM + PROGRAM_START);
 
     printf("ROM loaded to memory.\n");
     sleep(1);
 
-    disassemble(rom_ptr, rom_size);
-
-    free(rom_ptr);
+    disassemble(chip8, PROGRAM_START, rom_size);
 
     return EXIT_SUCCESS;
 }
