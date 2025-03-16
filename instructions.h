@@ -4,6 +4,7 @@
 #define INSTRUCTION_COUNT
 
 #include "common.h"
+#include "data.h"
 
 typedef enum OpcodeIndex
 {
@@ -94,5 +95,7 @@ typedef struct Instruction
 } Instruction_t;
 
 extern const Instruction_t instructions[];
+
+void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx);
 
 #endif

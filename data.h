@@ -5,6 +5,7 @@
 
 typedef struct Chip8
 {
+    bool quit;
     uint8_t ST;
     uint8_t DT;
     uint8_t V_REGS[16];

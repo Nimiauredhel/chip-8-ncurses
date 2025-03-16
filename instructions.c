@@ -60,3 +60,57 @@ const Instruction_t instructions[46] =
     { OPSCH_X__, "LD R, V%u" },
     { OPSCH_X__, "LD V%u, R" },
 };
+
+void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx)
+{
+    switch (op_idx)
+    {
+        case OP_UNKNOWN:
+        case OP_SYS_ADDR:
+        case OP_CLS:
+        case OP_RET:
+        case OP_JP_ADDR:
+        case OP_CALL_ADDR:
+        case OP_SE_VX_BYTE:
+        case OP_SNE_VX_BYTE:
+        case OP_SE_VX_VY:
+        case OP_LD_VX_BYTE:
+        case OP_ADD_VX_BYTE:
+        case OP_LD_VX_VY:
+        case OP_OR_VX_VY:
+        case OP_AND_VX_VY:
+        case OP_XOR_VX_VY:
+        case OP_ADD_VX_VY:
+        case OP_SUB_VX_VY:
+        case OP_SHR_VX_VY:
+        case OP_SUBN_VX_VY:
+        case OP_SHL_VX_VY:
+        case OP_SNE_VX_VY:
+        case OP_LD_I_ADDR:
+        case OP_JP_V0_ADDR:
+        case OP_RND_VX_BYTE:
+        case OP_DRW_VX_VY_NIBBLE:
+        case OP_SKP_VX:
+        case OP_SKNP_VX:
+        case OP_LD_VX_DT:
+        case OP_LD_VX_K:
+        case OP_LD_DT_VX:
+        case OP_LD_ST_VX:
+        case OP_ADD_I_VX:
+        case OP_LD_F_VX:
+        case OP_LD_B_VX:
+        case OP_LD_I_VX:
+        case OP_LD_VX_I:
+        case OP_SUPER_SCD_NIBBLE:
+        case OP_SUPER_SCR:
+        case OP_SUPER_SCL:
+        case OP_SUPER_EXIT:
+        case OP_SUPER_LOW:
+        case OP_SUPER_HIGH:
+        case OP_SUPER_DRW_VX_VY_0:
+        case OP_SUPER_LD_HF_VX:
+        case OP_SUPER_LD_R_VX:
+        case OP_SUPER_LD_VX_R:
+      break;
+    }
+}
