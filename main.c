@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
 
     sleep(1);
 
+    load_sprites(&chip8, default_sprites, 0x00);
     chip8.PC = PROGRAM_START;
     run(&chip8);
     //disassemble(&chip8, PROGRAM_START + rom_size);

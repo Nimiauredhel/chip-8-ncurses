@@ -19,3 +19,12 @@ const uint8_t default_sprites[80] =
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80
 };
+
+void load_sprites(Chip8_t *chip8, const uint8_t sprites[80], uint16_t starting_address)
+{
+    for (int i = 0; i < 80; i++)
+    {
+        chip8->RAM[starting_address + i] = sprites[i];
+        chip8->SPRITES[i] = starting_address + i;
+    }
+}

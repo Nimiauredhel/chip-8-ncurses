@@ -202,10 +202,16 @@ void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], O
             chip8->I_REG
             += chip8->V_REGS[nibbles[1]];
         case OP_LD_F_VX:
-            // TODO soon
+            chip8->I_REG
+            = chip8->SPRITES[chip8->V_REGS[nibbles[1]]];
             break;
         case OP_LD_B_VX:
-            // TODO
+            temp = chip8->V_REGS[nibbles[1]];
+            chip8->RAM[chip8->I_REG + 2] = temp % 10;
+            temp /=10;
+            chip8->RAM[chip8->I_REG + 1] = temp % 10;
+            temp /=10;
+            chip8->RAM[chip8->I_REG] = temp % 10;
             break;
         case OP_LD_I_VX:
             for (int i = 0; i <= nibbles[1]; i++)
