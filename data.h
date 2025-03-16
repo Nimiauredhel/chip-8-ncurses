@@ -8,6 +8,7 @@ typedef struct Chip8
     uint8_t ST;
     uint8_t DT;
     uint8_t SP;
+    uint8_t RNG;
     uint16_t PC;
     uint16_t I_REG;
     uint8_t V_REGS[16];

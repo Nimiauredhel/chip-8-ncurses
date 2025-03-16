@@ -73,7 +73,7 @@ void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], O
         case OP_SYS_ADDR:
             break;
         case OP_CLS:
-            // TODO
+            explicit_bzero(chip8->DISPLAY, 256);
             break;
         case OP_RET:
             chip8->PC = chip8->STACK_RET[chip8->SP];
@@ -172,11 +172,17 @@ void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], O
             chip8->PC -= 2;
             break;
         case OP_RND_VX_BYTE:
+            chip8->RNG = (uint8_t)random_range(0, 255);
             chip8->V_REGS[nibbles[1]]
-            = bytes[1] | random_range(0, 255);
+            = bytes[1] & chip8->RNG;
             break;
         case OP_DRW_VX_VY_NIBBLE:
-            // TODO
+            for (int i = 0; i < nibbles[3]; i++)
+            {
+                chip8->DISPLAY[chip8->V_REGS[nibbles[1]] + (chip8->V_REGS[nibbles[2]] * 8)]
+                ^= chip8->RAM[chip8->I_REG + i];
+            }
+            // TODO: implement collision and wrapping!
             break;
         case OP_SKP_VX:
             // TODO

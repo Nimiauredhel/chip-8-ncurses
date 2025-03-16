@@ -34,6 +34,40 @@ void print_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_id
     printf(" ~ bytes 0x%02X%02X ~ nibbles 0x%1X%1X%1X%1X \n", bytes[0], bytes[1], nibbles[0], nibbles[1], nibbles[2], nibbles[3]);
 }
 
+void printw_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx)
+{
+    static uint16_t word_arg = 0;
+
+    switch(instructions[op_idx].schema)
+    {
+    case OPSCH_NNN:
+        word_arg = (nibbles[1] << 8) + (nibbles[2] << 4) + nibbles[3];
+        printw(instructions[op_idx].format, word_arg);
+        break;
+    case OPSCH_XKK:
+        printw(instructions[op_idx].format, nibbles[1], bytes[1]);
+        break;
+    case OPSCH_XY_:
+        printw(instructions[op_idx].format, nibbles[1], nibbles[2]);
+        break;
+    case OPSCH_XYN:
+        printw(instructions[op_idx].format, nibbles[1], nibbles[2], nibbles[3]);
+        break;
+    case OPSCH_X__:
+        printw(instructions[op_idx].format, nibbles[1]);
+        break;
+    case OPSCH___N:
+        printw(instructions[op_idx].format, nibbles[3], bytes[1]);
+        break;
+    case OPSCH_NONE:
+    default:
+        printw("%s", instructions[op_idx].format);
+        break;
+    }
+
+    printw(" ~ bytes 0x%02X%02X ~ nibbles 0x%1X%1X%1X%1X \n", bytes[0], bytes[1], nibbles[0], nibbles[1], nibbles[2], nibbles[3]);
+}
+
 void disassemble(Chip8_t *chip8, uint16_t program_end)
 {
     OpcodeIndex_t op_idx = OP_UNKNOWN;

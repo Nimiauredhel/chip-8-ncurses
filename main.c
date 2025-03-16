@@ -72,15 +72,39 @@ size_t load_rom(char *rom_path, uint8_t *dest_ptr)
 
 void run(Chip8_t *chip8)
 {
+    bool step_mode = false;
+    int key = '~';
     OpcodeIndex_t op_idx = OP_UNKNOWN;
     uint8_t read_bytes[2] = {0};
     uint8_t read_nibbles[4] = {0};
 
     init_display(chip8);
+    cbreak();
+    nodelay(stdscr, true);
 
     while (chip8->PC < 4096 && chip8->PC >= 0 && !should_terminate)
     {
         usleep(16000); // 60hz
+
+        key = getch();
+
+        if (step_mode)
+        {
+            while (key != ' ' && key != 's' && !should_terminate)
+            {
+                key = getch();
+            }
+
+            usleep(100000);
+        }
+
+        if (key == 's')
+        {
+            step_mode = !step_mode;
+            usleep(100000);
+        }
+
+        key = '~';
         
         if (chip8->DT > 0) chip8->DT--;
         if (chip8->ST > 0) chip8->ST--;
@@ -94,10 +118,22 @@ void run(Chip8_t *chip8)
         read_nibbles[3] = read_bytes[1] - (read_nibbles[2] << 4);
 
         op_idx = parse_instruction(read_bytes, read_nibbles);
-        printf("[%u] ", chip8->PC);
-        print_instruction(read_bytes, read_nibbles, op_idx);
         execute_instruction(chip8, read_bytes, read_nibbles, op_idx);
         render_display(chip8);
+        mvprintw(0, 64, "[%u] ", chip8->PC);
+        printw_instruction(read_bytes, read_nibbles, op_idx);
+
+        for (int i = 0; i < 16; i++)
+        {
+            mvprintw(1+i, 64, "V%d[%u] ", i, chip8->V_REGS[i]);
+        }
+        mvprintw(17, 64, "I[%u] ", chip8->I_REG);
+        mvprintw(18, 64, "SP[%u] ", chip8->SP);
+        mvprintw(19, 64, "DT[%u] ", chip8->DT);
+        mvprintw(20, 64, "ST[%u] ", chip8->ST);
+        mvprintw(21, 64, "RNG[%u] ", chip8->RNG);
+
+        refresh();
 
         chip8->PC += 2;
     }
