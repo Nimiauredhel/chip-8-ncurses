@@ -77,6 +77,7 @@ void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], O
             break;
         case OP_RET:
             chip8->PC = chip8->STACK_RET[chip8->SP];
+            chip8->PC -= 2;
             chip8->ST--;
             break;
         case OP_CALL_ADDR:
@@ -258,6 +259,4 @@ void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], O
             // TODO
             break;
     }
-
-    disassemble(chip8, chip8->PC + 2);
 }

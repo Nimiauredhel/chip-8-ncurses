@@ -42,6 +42,11 @@ void run(Chip8_t *chip8)
 
     while (chip8->PC < 4096 && chip8->PC >= 0 && !chip8->quit && !should_terminate)
     {
+        usleep(16000); // 60hz
+        
+        if (chip8->DT > 0) chip8->DT--;
+        if (chip8->ST > 0) chip8->ST--;
+
         read_bytes[0] = chip8->RAM[chip8->PC];
         read_bytes[1] = chip8->RAM[chip8->PC + 1];
 
@@ -51,6 +56,8 @@ void run(Chip8_t *chip8)
         read_nibbles[3] = read_bytes[1] - (read_nibbles[2] << 4);
 
         op_idx = parse_instruction(read_bytes, read_nibbles);
+        printf("[%u] ", chip8->PC);
+        print_instruction(read_bytes, read_nibbles, op_idx);
         execute_instruction(chip8, read_bytes, read_nibbles, op_idx);
 
         chip8->PC += 2;
