@@ -15,4 +15,6 @@ typedef struct Chip8
     uint8_t RAM[4096];
 } Chip8_t;
 
+extern const uint8_t default_sprites[80];
+
 #endif
