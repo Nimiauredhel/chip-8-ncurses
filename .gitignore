@@ -1,5 +1,6 @@
 compile_commands.json
 .cache/
+roms/
 
 # Prerequisites
 *.d
