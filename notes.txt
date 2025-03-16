@@ -37,7 +37,7 @@ Ex9E SKP Vx
 ExA1 SKNP Vx
 
 Fx07 LD Vx, DT
-FX0A LD Vx, K
+Fx0A LD Vx, K
 Fx15 LD DT, Vx
 Fx18 LD ST, Vx
 Fx1E ADD I, Vx
@@ -62,6 +62,7 @@ Fx30 LD HF, Vx
 Fx75 LD R, Vx
 Fx85 LD Vx, R
 
+abcd >> 4 = 00ab
+abcd << 4 = cd00
+cd00 >> 4 = 00cd
 
-1011 >> 4 = 0010 
-1011

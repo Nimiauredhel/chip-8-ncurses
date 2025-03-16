@@ -2,6 +2,8 @@
 
 const Instruction_t instructions[] =
 {
+    { 1, "UNKNOWN (%4x)" }, // 0nnn SYS addr - legacy, ignore
+                      //
     // chip 8 instructions
     { 1, "SYS %4x" }, // 0nnn SYS addr - legacy, ignore
     { 0, "CLS" }, // CLS - clear screen
