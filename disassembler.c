@@ -7,7 +7,7 @@ void print_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_id
     switch(instructions[op_idx].schema)
     {
     case OPSCH_NNN:
-        word_arg = (nibbles[1] << 8) + (nibbles[2] << 4) + nibbles[3];
+        word_arg = parse_nnn(nibbles[1], nibbles[2], nibbles[3]);
         printf(instructions[op_idx].format, word_arg);
         break;
     case OPSCH_XKK:
@@ -41,7 +41,7 @@ void printw_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_i
     switch(instructions[op_idx].schema)
     {
     case OPSCH_NNN:
-        word_arg = (nibbles[1] << 8) + (nibbles[2] << 4) + nibbles[3];
+        word_arg = parse_nnn(nibbles[1], nibbles[2], nibbles[3]);
         printw(instructions[op_idx].format, word_arg);
         break;
     case OPSCH_XKK:

@@ -193,14 +193,29 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
-    char *rom_path = argv[1];
-    bool should_run = true;
+    char *rom_path;
 
-    while (should_run)
+    if (strcmp(argv[1], "d") == 0 && argc > 2)
     {
-        Chip8_t *chip8 = create_instance(rom_path);
-        should_run = run(chip8);
-        free(chip8);
+        rom_path = argv[2];
+        Chip8_t chip8 = {0};
+        size_t rom_size = load_rom(rom_path, chip8.RAM + PROGRAM_START);
+        printf("ROM loaded to memory.\n");
+        sleep(1);
+        chip8.PC = PROGRAM_START;
+        disassemble(&chip8, PROGRAM_START + rom_size);
+    }
+    else
+    {
+        rom_path = argv[1];
+        bool should_run = true;
+
+        while (should_run)
+        {
+            Chip8_t *chip8 = create_instance(rom_path);
+            should_run = run(chip8);
+            free(chip8);
+        }
     }
 
     return EXIT_SUCCESS;

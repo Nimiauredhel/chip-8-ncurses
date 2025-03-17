@@ -142,3 +142,10 @@ OpcodeIndex_t parse_instruction(uint8_t bytes[2], uint8_t nibbles[4])
             return OP_UNKNOWN;
     }
 }
+
+uint16_t parse_nnn(uint8_t n1, uint8_t n2, uint8_t n3)
+{
+    return (uint16_t)(n1 << 8)
+    + (n2 << 4)
+    + n3;
+}

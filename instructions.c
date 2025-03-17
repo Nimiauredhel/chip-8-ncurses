@@ -85,10 +85,7 @@ void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], O
             chip8->STACK_RET[chip8->SP] = chip8->PC;
             // intentional fall through!
         case OP_JP_ADDR:
-            chip8->PC =
-            (nibbles[1] << 8)
-            + (nibbles[2] << 4)
-            + nibbles[3];
+            chip8->PC = parse_nnn(nibbles[1], nibbles[2], nibbles[3]);
             chip8->PC -= 2;
             break;
         case OP_SE_VX_BYTE:
@@ -158,16 +155,10 @@ void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], O
             != chip8->V_REGS[nibbles[2]]) chip8->PC += 2;
             break;
         case OP_LD_I_ADDR:
-            chip8->I_REG =
-            (nibbles[1] << 8)
-            + (nibbles[2] << 4)
-            + nibbles[3];
+            chip8->I_REG = parse_nnn(nibbles[1], nibbles[2], nibbles[3]);
             break;
         case OP_JP_V0_ADDR:
-            chip8->PC =
-            (nibbles[1] << 8)
-            + (nibbles[2] << 4)
-            + nibbles[3];
+            chip8->PC = parse_nnn(nibbles[1], nibbles[2], nibbles[3]);
             chip8->PC += chip8->V_REGS[0];
             chip8->PC -= 2;
             break;
