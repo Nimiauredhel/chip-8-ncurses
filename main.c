@@ -19,8 +19,6 @@ void render_display(Chip8_t *chip8)
     uint8_t byte;
     uint8_t pixel;
 
-    clear();
-
     for (int row = 0; row < 32; row++)
     {
         for (int col = 0; col < 8; col++)
@@ -36,8 +34,6 @@ void render_display(Chip8_t *chip8)
             }
         }
     }
-
-    refresh();
 }
 
 size_t load_rom(char *rom_path, uint8_t *dest_ptr)
@@ -70,10 +66,11 @@ size_t load_rom(char *rom_path, uint8_t *dest_ptr)
     return file_size;
 }
 
-void run(Chip8_t *chip8)
+bool run(Chip8_t *chip8)
 {
     bool step_mode = false;
     int key = '~';
+    uint32_t frame_us = 16000; // 60hz
     OpcodeIndex_t op_idx = OP_UNKNOWN;
     uint8_t read_bytes[2] = {0};
     uint8_t read_nibbles[4] = {0};
@@ -84,13 +81,13 @@ void run(Chip8_t *chip8)
 
     while (chip8->PC < 4096 && chip8->PC >= 0 && !should_terminate)
     {
-        usleep(16000); // 60hz
+        usleep(frame_us);
 
         key = getch();
 
         if (step_mode)
         {
-            while (key != ' ' && key != 's' && !should_terminate)
+            while (key != ' ' && key != 's' && key != 'r' && !should_terminate)
             {
                 key = getch();
             }
@@ -98,10 +95,28 @@ void run(Chip8_t *chip8)
             usleep(100000);
         }
 
-        if (key == 's')
+        switch(key)
         {
-            step_mode = !step_mode;
-            usleep(100000);
+            case 'r':
+                return true;
+            case 's':
+                step_mode = !step_mode;
+                usleep(100000);
+                break;
+            case '=':
+            case '+':
+                if (frame_us > 8000)
+                {
+                    frame_us /= 2;
+                }
+                break;
+            case '-':
+            case '_':
+                if (frame_us < 1024000)
+                {
+                    frame_us *= 2;
+                }
+                break;
         }
 
         key = '~';
@@ -119,7 +134,11 @@ void run(Chip8_t *chip8)
 
         op_idx = parse_instruction(read_bytes, read_nibbles);
         execute_instruction(chip8, read_bytes, read_nibbles, op_idx);
+
+        clear();
+
         render_display(chip8);
+
         mvprintw(0, 64, "[%u] ", chip8->PC);
         printw_instruction(read_bytes, read_nibbles, op_idx);
 
@@ -141,6 +160,22 @@ void run(Chip8_t *chip8)
     endwin();
     printf("Program over!\n");
     sleep(1);
+    return 0;
+}
+
+Chip8_t *create_instance(char *rom_path)
+{
+    Chip8_t *chip8 = malloc(sizeof(Chip8_t));
+    explicit_bzero(chip8, sizeof(Chip8_t));
+
+    load_rom(rom_path, chip8->RAM + PROGRAM_START);
+    printf("ROM loaded to memory.\n");
+
+    sleep(1);
+
+    load_sprites(chip8, default_sprites, PROGRAM_START - 80);
+    chip8->PC = PROGRAM_START;
+    return chip8;
 }
 
 int main(int argc, char *argv[])
@@ -158,20 +193,15 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
-    Chip8_t chip8 = {0};
-
     char *rom_path = argv[1];
+    bool should_run = true;
 
-    //size_t rom_size = load_rom(rom_path, chip8.RAM + PROGRAM_START);
-    load_rom(rom_path, chip8.RAM + PROGRAM_START);
-    printf("ROM loaded to memory.\n");
-
-    sleep(1);
-
-    load_sprites(&chip8, default_sprites, PROGRAM_START - 80);
-    chip8.PC = PROGRAM_START;
-    run(&chip8);
-    //disassemble(&chip8, PROGRAM_START + rom_size);
+    while (should_run)
+    {
+        Chip8_t *chip8 = create_instance(rom_path);
+        should_run = run(chip8);
+        free(chip8);
+    }
 
     return EXIT_SUCCESS;
 }
