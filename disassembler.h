@@ -5,9 +5,11 @@
 #include "parser.h"
 #include "data.h"
 
+extern const char instruction_formats[CHIP8_INSTRUCTION_COUNT][32];
+
 void disassemble(Chip8_t *chip8, uint16_t program_end);
 
-void print_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx);
-void printw_instruction(uint8_t bytes[2], uint8_t nibbles[4], OpcodeIndex_t op_idx);
+void print_instruction(Instruction_t *instruction);
+void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Instruction_t *instruction);
 
 #endif
