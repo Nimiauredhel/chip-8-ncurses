@@ -29,7 +29,7 @@
 #define CHIP8_DISPLAY_SUPER_INDEX(x, y) (y + (x * CHIP8_DISPLAY_SUPER_HEIGHT))
 */
 
-#define EMU_DEFAULT_DELAY_US (16000) // 60 hz
+#define EMU_DEFAULT_DELAY_US (16666) // 60 hz
 #define EMU_SPEED_INCREMENT (0.1f)
 #define EMU_MIN_SPEED_MOD (0.0f) // 0 hz
 #define EMU_MAX_SPEED_MOD (100.0f) // 6000 hz

@@ -2,32 +2,31 @@
 
 bool run(Chip8_t *chip8)
 {
+    const uint32_t tick_delay_us = 8333;
+    const uint32_t tick_threshold = EMU_DEFAULT_DELAY_US;
     const struct timespec start_clock;
-    const uint32_t tick_increment = 1000;
-
-    // intentionally discarding the const qualifier ONCE to init the value
-    // hope the police don't get me
-    clock_gettime(CLOCK_MONOTONIC, (struct timespec *)&start_clock);
 
     bool should_reset = false;
     bool step_mode = false;
     bool step_pressed = false;
 
     float speed_modifier = 1.0f;
-    uint32_t tick_counter_us = 0;
-    uint32_t tick_threshold_us = EMU_DEFAULT_DELAY_US * speed_modifier;
+    uint32_t tick_increment = tick_delay_us * speed_modifier;
+    uint32_t tick_counter = 0;
     uint32_t frame_counter = 0;
-    float seconds_counter;
+    float seconds_counter = 0.0f;
+    float avg_fps;
 
     int key = '~';
     Instruction_t instruction;
+    DisplayLayout_t layout;
 
-    WINDOW *window_chip8 = NULL;
-    WINDOW *window_emu = NULL;
-    WINDOW *window_disassembly = NULL;
+    // intentionally discarding the const qualifier ONCE to init the value
+    // hope the police don't get me
+    clock_gettime(CLOCK_MONOTONIC, (struct timespec *)&start_clock);
 
-    init_display(chip8, &window_chip8, &window_emu, &window_disassembly);
-    render_display(chip8, window_chip8);
+    init_display(&layout);
+    render_display(chip8, layout.window_chip8);
     cbreak();
     nodelay(stdscr, true);
     noecho();
@@ -35,7 +34,7 @@ bool run(Chip8_t *chip8)
     while (chip8->PC < 0xFFF && !should_terminate && !should_reset)
     {
         key = getch();
-        usleep(tick_increment);
+        usleep(tick_delay_us);
 
         switch(key)
         {
@@ -47,15 +46,15 @@ bool run(Chip8_t *chip8)
                 break;
             case '=':
             case '+':
-                speed_modifier -= EMU_SPEED_INCREMENT;
-                if (speed_modifier < EMU_MIN_SPEED_MOD) speed_modifier = EMU_MIN_SPEED_MOD;
-                tick_threshold_us = EMU_DEFAULT_DELAY_US / speed_modifier;
+                speed_modifier += EMU_SPEED_INCREMENT;
+                if (speed_modifier > EMU_MAX_SPEED_MOD) speed_modifier = EMU_MAX_SPEED_MOD;
+                tick_increment = tick_delay_us * speed_modifier;
                 break;
             case '-':
             case '_':
-                speed_modifier += EMU_SPEED_INCREMENT;
-                if (speed_modifier > EMU_MAX_SPEED_MOD) speed_modifier = EMU_MAX_SPEED_MOD;
-                tick_threshold_us = EMU_DEFAULT_DELAY_US / speed_modifier;
+                speed_modifier -= EMU_SPEED_INCREMENT;
+                if (speed_modifier < EMU_MIN_SPEED_MOD) speed_modifier = EMU_MIN_SPEED_MOD;
+                tick_increment = tick_delay_us * speed_modifier;
                 break;
             case ' ':
                 if (step_mode)
@@ -63,20 +62,12 @@ bool run(Chip8_t *chip8)
                     step_pressed = true;
                 }
                 break;
+            case '~':
             default:
                 break;
         }
 
         if (should_terminate) break;
-
-        wclear(window_emu);
-        box(window_emu, 0, 0);
-        mvwprintw(window_emu, 1, 1, "Speed[%.2f]", 1.0f/speed_modifier);
-        mvwprintw(window_emu, 2, 1, "Tick Threshold[%uμs]", tick_threshold_us);
-        mvwprintw(window_emu, 3, 1, "Tick Counter[%uμs]", tick_counter_us);
-        mvwprintw(window_emu, 4, 1, "Frame Counter[%u]", frame_counter);
-        mvwprintw(window_emu, 5, 1, "Runtime[%.2fs]", seconds_counter);
-        wrefresh(window_emu);
 
         if (step_mode)
         {
@@ -99,15 +90,25 @@ bool run(Chip8_t *chip8)
             key = '~';
             seconds_counter = seconds_since_clock(start_clock);
 
-            if(tick_counter_us < tick_threshold_us)
+            if(tick_counter < tick_threshold)
             {
-                tick_counter_us += tick_increment;
+                tick_counter += tick_increment;
                 continue;
             }
         }
 
-        tick_counter_us = 0;
+        tick_counter = 0;
         frame_counter++;
+        avg_fps = frame_counter / seconds_counter;
+
+        wclear(layout.window_emu);
+        box(layout.window_emu, 0, 0);
+        mvwprintw(layout.window_emu, 1, 1, "Speed[%.2f]", 1.0f/speed_modifier);
+        mvwprintw(layout.window_emu, 2, 1, "Frame Counter[%u]", frame_counter);
+        mvwprintw(layout.window_emu, 3, 1, "Runtime[%.2fs]", seconds_counter);
+        mvwprintw(layout.window_emu, 4, 1, "Avg. FPS[%.2f]", avg_fps);
+        //mvwprintw(window_emu, 5, 1, "Tick Counter[%u/%u]", tick_counter, tick_threshold);
+        wrefresh(layout.window_emu);
         
         if (chip8->DT > 0) chip8->DT--;
         if (chip8->ST > 0) chip8->ST--;
@@ -122,33 +123,33 @@ bool run(Chip8_t *chip8)
 
         decode_instruction(&instruction);
 
-        wclear(window_disassembly);
-        box(window_disassembly, 0, 0);
-        mvwprintw(window_disassembly, 1, 1, "[%u] ", chip8->PC);
-        mvwprintw_instruction(window_disassembly, 1, 6, &instruction);
+        wclear(layout.window_disassembly);
+        box(layout.window_disassembly, 0, 0);
+        mvwprintw(layout.window_disassembly, 1, 1, "[%u] ", chip8->PC);
+        mvwprintw_instruction(layout.window_disassembly, 1, 6, &instruction);
 
         for (int i = 0; i < 16; i++)
         {
-            mvwprintw(window_disassembly, 2+i, 1, "V%d[%u]", i, chip8->V_REGS[i]);
+            mvwprintw(layout.window_disassembly, 2+i, 1, "V%d[%u]", i, chip8->V_REGS[i]);
         }
 
-        mvwprintw(window_disassembly, 18, 1, "I[%u]", chip8->I_REG);
-        mvwprintw(window_disassembly, 19, 1, "SP[%u]", chip8->SP);
-        mvwprintw(window_disassembly, 20, 1, "DT[%u]", chip8->DT);
-        mvwprintw(window_disassembly, 21, 1, "ST[%u]", chip8->ST);
-        mvwprintw(window_disassembly, 22, 1, "RNG[%u]", chip8->RNG);
-        wrefresh(window_disassembly);
+        mvwprintw(layout.window_disassembly, 18, 1, "I[%u]", chip8->I_REG);
+        mvwprintw(layout.window_disassembly, 19, 1, "SP[%u]", chip8->SP);
+        mvwprintw(layout.window_disassembly, 20, 1, "DT[%u]", chip8->DT);
+        mvwprintw(layout.window_disassembly, 21, 1, "ST[%u]", chip8->ST);
+        mvwprintw(layout.window_disassembly, 22, 1, "RNG[%u]", chip8->RNG);
+        wrefresh(layout.window_disassembly);
 
-        execute_instruction(chip8, &instruction, window_chip8);
+        execute_instruction(chip8, &instruction, layout.window_chip8);
 
         chip8->PC += 2;
     }
 
     usleep(250000);
     
-    delwin(window_chip8);
-    delwin(window_disassembly);
-    delwin(window_emu);
+    delwin(layout.window_chip8);
+    delwin(layout.window_disassembly);
+    delwin(layout.window_emu);
     endwin();
     printf(chip8->PC > 0xFFF ? "PC out of bounds!\n" : should_reset ? "Restarting!\n" : "Program over!\n");
     usleep(500000);
@@ -404,6 +405,8 @@ void execute_instruction(Chip8_t *chip8, Instruction_t *instruction, WINDOW *win
             break;
         case OP_SUPER_LD_VX_R:
             // TODO
+            break;
+        default:
             break;
     }
     // undefining the macros to keep them local

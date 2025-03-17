@@ -133,6 +133,7 @@ void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Instruc
             break;
     }
 
+    /*
     mvwprintw(window_disassembly, row, col,
     " ~ bytes %u, %u ~ nibbles 0x%1X%1X%1X%1X",
     instruction->bytes[0],
@@ -141,6 +142,7 @@ void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Instruc
     instruction->nibbles[1],
     instruction->nibbles[2],
     instruction->nibbles[3]);
+    */
 }
 
 void disassemble(Chip8_t *chip8, uint16_t program_end)
