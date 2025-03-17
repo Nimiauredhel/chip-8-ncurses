@@ -177,12 +177,16 @@ void execute_instruction(Chip8_t *chip8, uint8_t bytes[2], uint8_t nibbles[4], O
             = bytes[1] & chip8->RNG;
             break;
         case OP_DRW_VX_VY_NIBBLE:
+            chip8->V_REGS[15] = 0;
             for (int i = 0; i < nibbles[3]; i++)
             {
-                chip8->DISPLAY[chip8->V_REGS[nibbles[1]] + (chip8->V_REGS[nibbles[2]] * 8)]
-                ^= chip8->RAM[chip8->I_REG + i];
+                temp = i + chip8->V_REGS[nibbles[1]] + (chip8->V_REGS[nibbles[2]] * 8);
+                if (temp > 255) temp -= 255; // wrapping
+                if (chip8->V_REGS[15] == 0) chip8->V_REGS[15]
+                = chip8->DISPLAY[temp] & chip8->RAM[chip8->I_REG + i]; // collision!
+                chip8->DISPLAY[temp]
+                ^= chip8->RAM[chip8->I_REG + i]; // actually XORing the pixels together
             }
-            // TODO: implement collision and wrapping!
             break;
         case OP_SKP_VX:
             // TODO
