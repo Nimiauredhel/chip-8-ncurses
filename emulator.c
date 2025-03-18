@@ -10,7 +10,7 @@ bool run(Chip8_t *chip8)
     bool step_mode = false;
     bool step_pressed = false;
 
-    float speed_modifier = 1.0f;
+    float speed_modifier = 0.05f;
     uint32_t tick_increment = tick_delay_us * speed_modifier;
     uint32_t tick_counter = 0;
     uint32_t frame_counter = 0;
@@ -71,7 +71,7 @@ bool run(Chip8_t *chip8)
 
         if (step_mode)
         {
-            if (key == ' ')
+            if (key == 's')
             {
                 step_mode = false;
                 continue;
@@ -103,7 +103,7 @@ bool run(Chip8_t *chip8)
 
         wclear(layout.window_emu);
         box(layout.window_emu, 0, 0);
-        mvwprintw(layout.window_emu, 1, 1, "Speed[%.2f]", 1.0f/speed_modifier);
+        mvwprintw(layout.window_emu, 1, 1, "Speed[%.2f]", speed_modifier);
         mvwprintw(layout.window_emu, 2, 1, "Frame Counter[%u]", frame_counter);
         mvwprintw(layout.window_emu, 3, 1, "Runtime[%.2fs]", seconds_counter);
         mvwprintw(layout.window_emu, 4, 1, "Avg. FPS[%.2f]", avg_fps);
@@ -158,7 +158,8 @@ bool run(Chip8_t *chip8)
 
 void execute_instruction(Chip8_t *chip8, Instruction_t *instruction, WINDOW *window_chip8)
 {
-    // local macros for the custom TEMP registers I added
+    // local macros for registers
+#define VF chip8->V_REGS[15]
 #define TEMP0_BYTE0 chip8->EMU_TEMP[0].bytes[0]
 #define TEMP0_BYTE1 chip8->EMU_TEMP[0].bytes[1]
 #define TEMP1_BYTE0 chip8->EMU_TEMP[1].bytes[0]
@@ -232,28 +233,28 @@ void execute_instruction(Chip8_t *chip8, Instruction_t *instruction, WINDOW *win
         case OP_ADD_VX_VY:
             chip8->EMU_TEMP[0].word = chip8->V_REGS[instruction->nibbles[1]]
             + chip8->V_REGS[instruction->nibbles[2]];
-            chip8->V_REGS[15] = chip8->EMU_TEMP[0].word > 255; // set VF to 1 if result greater than 255.
+            VF = chip8->EMU_TEMP[0].word > 255; // set VF to 1 if result greater than 255.
             chip8->V_REGS[instruction->nibbles[1]] // setting Vx to the result AND 255,
             = (uint8_t)(chip8->EMU_TEMP[0].word & 255); // to properly discard bits 8 and up
             break;
         case OP_SUB_VX_VY:
-            chip8->V_REGS[15] = chip8->V_REGS[instruction->nibbles[1]]
+            VF = chip8->V_REGS[instruction->nibbles[1]]
             > chip8->V_REGS[instruction->nibbles[2]];
             chip8->V_REGS[instruction->nibbles[1]]
             -= chip8->V_REGS[instruction->nibbles[2]];
             break;
         case OP_SHR_VX_VY:
-            chip8->V_REGS[15] = instruction->nibbles[1] & 0x01;
+            VF = instruction->nibbles[1] & 0x01;
             chip8->V_REGS[instruction->nibbles[1]] /= 2;
             break;
         case OP_SUBN_VX_VY:
-            chip8->V_REGS[15] = chip8->V_REGS[instruction->nibbles[2]]
+            VF = chip8->V_REGS[instruction->nibbles[2]]
             > chip8->V_REGS[instruction->nibbles[1]];
             chip8->V_REGS[instruction->nibbles[1]]
             = chip8->V_REGS[instruction->nibbles[2]] - chip8->V_REGS[instruction->nibbles[1]];
             break;
         case OP_SHL_VX_VY:
-            chip8->V_REGS[15] = instruction->nibbles[1] & 0x01;
+            VF = instruction->nibbles[1] & 0x01;
             chip8->V_REGS[instruction->nibbles[1]] *= 2;
             break;
         case OP_SNE_VX_VY:
@@ -280,56 +281,68 @@ void execute_instruction(Chip8_t *chip8, Instruction_t *instruction, WINDOW *win
             = instruction->bytes[1] & chip8->RNG;
             break;
         case OP_DRW_VX_VY_NIBBLE:
-#define X TEMP0_BYTE0
-#define Y TEMP0_BYTE1
-#define READ_POSITION TEMP1_BYTE0
-#define READ_END TEMP1_BYTE1
-#define WRITE_POSITION TEMP2_BYTE0
-#define BIT_OFFSET TEMP2_BYTE1
+            // extensive macros to make this more sane to read
+#define X_ORIG chip8->V_REGS[instruction->nibbles[1]]
+#define Y_ORIG chip8->V_REGS[instruction->nibbles[2]]
+#define READ_START chip8->I_REG
+#define READ_LENGTH instruction->nibbles[3]
+
+#define X_POS TEMP0_BYTE0 // destination x position
+#define Y_POS TEMP0_BYTE1 // destination y position
+#define INDEX TEMP1_BYTE0 // running counter of the write operation
+#define BIT_OFFSET TEMP1_BYTE1 // how many bits to the right are we shiting
+#define WRITE_POS_LEFT TEMP2_BYTE0 // RAM index to receive the leftmost bits
+#define WRITE_POS_RIGHT TEMP2_BYTE1 // RAM index to receive the rightmost bits
+
             // VF = collision, init to zero, actual check later
-            chip8->V_REGS[15] = 0;
+            VF = 0;
 
-            X = chip8->V_REGS[instruction->nibbles[1]]
-            & CHIP8_DISPLAY_X_MAX; // set x coord (AND 63 for wrapping)
-            Y = chip8->V_REGS[instruction->nibbles[2]]
-            & CHIP8_DISPLAY_Y_MAX; // set y coord (AND 31 for wrapping)
+            // init x coord (AND 63 for wrapping)
+            X_POS = X_ORIG & CHIP8_DISPLAY_X_MAX;
+            // init y coord (AND 31 for wrapping)
+            Y_POS = Y_ORIG & CHIP8_DISPLAY_Y_MAX;
 
-            // iterating up to <last nibble> rows, reading from <I register> RAM location,
-            // writing to display starting from <x, y> and going down
-            READ_POSITION = chip8->I_REG;
-            READ_END = chip8->I_REG + instruction->nibbles[3];
-
-            for (; READ_POSITION < READ_END; READ_POSITION++)
+            // iterating <read length> rows, reading from <read start> RAM location,
+            // writing to display starting from <x origin, y origin>
+            for (INDEX = 0; INDEX < READ_LENGTH; INDEX++)
             {
-                // translating coords to array index for this iteration
-                WRITE_POSITION = CHIP8_DISPLAY_INDEX(X, Y);
-
                 // check offset from 8-bit alignment
-                BIT_OFFSET = X % 8;
+                BIT_OFFSET = X_POS % 8;
+
+                // translating current coords to write position
+                WRITE_POS_LEFT = CHIP8_DISPLAY_INDEX(X_POS, Y_POS);
+                WRITE_POS_RIGHT = CHIP8_DISPLAY_INDEX((X_POS + 1) & CHIP8_DISPLAY_X_MAX, Y_POS);
 
                 // check for collision (if not collided yet)
-                chip8->V_REGS[15] |= (chip8->DISPLAY[WRITE_POSITION]
-                                   & (chip8->RAM[READ_POSITION] >> BIT_OFFSET));
-                chip8->V_REGS[15] |= (chip8->DISPLAY[(WRITE_POSITION+1) & CHIP8_DISPLAY_SIZE]
-                                   & (chip8->RAM[READ_POSITION] << (8 - BIT_OFFSET)));
+                VF |= (chip8->DISPLAY[WRITE_POS_LEFT]
+                                   & (chip8->RAM[READ_START + INDEX] >> BIT_OFFSET));
+                VF |= (chip8->DISPLAY[WRITE_POS_RIGHT]
+                                   & (chip8->RAM[READ_START + INDEX] << (8 - BIT_OFFSET)));
                 // TODO: figure out if this works as well as or better than the following:
-                // if (chip8->V_REGS[15] == 0) chip8->V_REGS[15]
-                // = chip8->DISPLAY[TEMP1_BYTE1] & chip8->RAM[TEMP1_BYTE0];
+                // if (VF == 0) VF
+                // = chip8->DISPLAY[WRITE_POS] & chip8->RAM[READ_POS];
 
                 // actually XORing the pixels together
-                chip8->DISPLAY[WRITE_POSITION]
-                ^= (chip8->RAM[READ_POSITION] >> BIT_OFFSET);
-                chip8->DISPLAY[(WRITE_POSITION+1) & CHIP8_DISPLAY_SIZE]
-                ^= (chip8->RAM[READ_POSITION] << (8 - BIT_OFFSET));
+                chip8->DISPLAY[WRITE_POS_LEFT]
+                ^= (chip8->RAM[READ_START + INDEX] >> BIT_OFFSET);
+                chip8->DISPLAY[WRITE_POS_RIGHT]
+                ^= (chip8->RAM[READ_START + INDEX] << (8 - BIT_OFFSET));
 
-                // incrementing x coord for next iteration
-                X++;
+                // incrementing y coord for next iteration
+                Y_POS++;
 
-                if (X > CHIP8_DISPLAY_X_MAX)
+                // sprites are 5 bytes high, so going over 5 implies new column
+                if (INDEX % CHIP8_DEFAULT_SPRITE_HEIGHT == 0)
                 {
-                    // incrementing y when x wraps around
-                    X &= CHIP8_DISPLAY_X_MAX;
-                    Y = (Y + 1) & CHIP8_DISPLAY_Y_MAX;
+                    Y_POS = Y_ORIG;
+                    X_POS = (X_POS + 1) & CHIP8_DISPLAY_X_MAX;
+                }
+
+                // if y goes out the bottom it should wrap back from the top,
+                // which importantly does NOT affect x
+                if (Y_POS > CHIP8_DISPLAY_Y_MAX)
+                {
+                    Y_POS &= CHIP8_DISPLAY_Y_MAX;
                 }
             }
 
@@ -427,6 +440,7 @@ void execute_instruction(Chip8_t *chip8, Instruction_t *instruction, WINDOW *win
             break;
     }
     // undefining the macros to keep them local
+#undef VF
 #undef TEMP0_BYTE0
 #undef TEMP0_BYTE1
 #undef TEMP1_BYTE0

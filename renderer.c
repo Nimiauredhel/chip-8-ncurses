@@ -22,7 +22,7 @@ void init_display(DisplayLayout_t *layout)
 
 void render_display(Chip8_t *chip8, WINDOW *window_chip8)
 {
-    //static const char c[8] = {'0', '1', '2', '3', '4', '5', '6', '7'};
+    static const char c[8] = {'0', '1', '2', '3', '4', '5', '6', '7'};
 
     uint8_t byte;
     uint8_t pixel;
@@ -40,7 +40,7 @@ void render_display(Chip8_t *chip8, WINDOW *window_chip8)
         {
             pixel = 2 - ((byte >> (7 - bit)) & 0x01);
             wattron(window_chip8, COLOR_PAIR(pixel));
-            mvwaddch(window_chip8, 1 + row, 1 + bit + (col * 8), ' ');//c[bit]);
+            mvwaddch(window_chip8, 1 + row, 1 + bit + (col * 8), c[bit]);
             wattroff(window_chip8, COLOR_PAIR(pixel));
         }
 
