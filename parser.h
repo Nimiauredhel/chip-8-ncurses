@@ -88,15 +88,15 @@ typedef enum InstructionSchema
     OPSCH___N = 6,
 } InstructionSchema_t;
 
-typedef struct ParsedInstruction
+typedef struct Chip8Instruction
 {
-    uint8_t bytes[2];
-    uint8_t nibbles[4];
     OpcodeIndex_t op_idx;
-} Instruction_t;
+    uint8_t nibbles[4];
+    uint8_t bytes[2];
+} Chip8Instruction_t;
 
 extern const InstructionSchema_t instruction_schemas[CHIP8_INSTRUCTION_COUNT];
 
-void decode_instruction(Instruction_t *instruction);
+void decode_instruction(Chip8Instruction_t *instruction);
 
 #endif

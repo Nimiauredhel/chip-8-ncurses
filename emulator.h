@@ -9,6 +9,6 @@
 #include "disassembler.h"
 
 bool run(Chip8_t *chip8);
-void execute_instruction(Chip8_t *chip8, Instruction_t *instruction, WINDOW *window_chip8);
+void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW *window_chip8);
 
 #endif

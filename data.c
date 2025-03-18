@@ -22,19 +22,24 @@ const uint8_t default_sprites[CHIP8_DEFAULT_SPRITES_SIZE] =
 
 Chip8_t *create_instance(char *rom_path)
 {
+    printf("Initializing CHIP-8 instance.");
     Chip8_t *chip8 = malloc(sizeof(Chip8_t));
     explicit_bzero(chip8, sizeof(Chip8_t));
-    printf("Initialized CHIP-8 instance.");
-    usleep(200000);
+    usleep(100000);
+
+    chip8->emu_state = (EmulatorState_t *)(chip8->RAM + CHIP8_RAM_EMU_STATE_START);
+    chip8->display_memory = (chip8->RAM + CHIP8_RAM_DISPLAY_START);
+    chip8->registers = (Chip8Registers_t *)(chip8->RAM + CHIP8_RAM_REGISTERS_START);
+    chip8->instruction = (Chip8Instruction_t *)(chip8->RAM + CHIP8_RAM_INSTRUCTION_START);
 
     load_default_sprites(chip8);
     printf("Loaded default sprites.\n");
-    usleep(200000);
+    usleep(100000);
 
-    load_rom(rom_path, chip8->RAM + CHIP8_DEFAULT_PROGRAM_START);
-    chip8->PC = CHIP8_DEFAULT_PROGRAM_START;
-    printf("Loaded ROM.\n");
-    usleep(200000);
+    load_rom(rom_path, chip8->RAM + CHIP8_RAM_PROGRAM_START);
+    chip8->registers->PC = CHIP8_RAM_PROGRAM_START;
+    printf("Loaded program.\n");
+    usleep(100000);
 
     return chip8;
 }
@@ -43,7 +48,7 @@ void load_default_sprites(Chip8_t *chip8)
 {
     for (uint16_t i = 0; i < CHIP8_DEFAULT_SPRITES_SIZE; i++)
     {
-        chip8->RAM[CHIP8_DEFAULT_SPRITES_START + i] = default_sprites[i];
+        chip8->RAM[CHIP8_RAM_SPRITES_START + i] = default_sprites[i];
     }
 }
 

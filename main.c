@@ -24,12 +24,11 @@ int main(int argc, char *argv[])
     if (strcmp(argv[1], "d") == 0 && argc > 2)
     {
         rom_path = argv[2];
-        Chip8_t chip8 = {0};
-        size_t rom_size = load_rom(rom_path, chip8.RAM + CHIP8_DEFAULT_PROGRAM_START);
+        Chip8_t *chip8 = create_instance(rom_path);
+        size_t rom_size = load_rom(rom_path, chip8->RAM + CHIP8_RAM_PROGRAM_START);
         printf("ROM loaded to memory.\n");
         sleep(1);
-        chip8.PC = CHIP8_DEFAULT_PROGRAM_START;
-        disassemble(&chip8, CHIP8_DEFAULT_PROGRAM_START + rom_size);
+        disassemble(chip8, CHIP8_RAM_PROGRAM_START + rom_size);
     }
     else
     {

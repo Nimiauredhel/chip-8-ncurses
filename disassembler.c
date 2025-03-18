@@ -62,7 +62,7 @@ const char instruction_formats[CHIP8_INSTRUCTION_COUNT][32] =
     "LD V%u, R",
 };
 
-void print_instruction(Instruction_t *instruction)
+void print_instruction(Chip8Instruction_t *instruction)
 {
     static uint16_t word_arg = 0;
 
@@ -102,7 +102,7 @@ void print_instruction(Instruction_t *instruction)
     instruction->nibbles[3]);
 }
 
-void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Instruction_t *instruction)
+void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Chip8Instruction_t *instruction)
 {
     static uint16_t word_arg = 0;
 
@@ -147,12 +147,12 @@ void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Instruc
 
 void disassemble(Chip8_t *chip8, uint16_t program_end)
 {
-    Instruction_t instruction;
+    Chip8Instruction_t instruction;
 
-    while (chip8->PC < program_end)
+    while (chip8->registers->PC < program_end)
     {
-        instruction.bytes[0] = chip8->RAM[chip8->PC];
-        instruction.bytes[1] = chip8->RAM[chip8->PC + 1];
+        instruction.bytes[0] = chip8->RAM[chip8->registers->PC];
+        instruction.bytes[1] = chip8->RAM[chip8->registers->PC + 1];
 
         instruction.nibbles[0] = instruction.bytes[0] >> 4;
         instruction.nibbles[1] = instruction.bytes[0] - (instruction.nibbles[0] << 4);
@@ -160,9 +160,9 @@ void disassemble(Chip8_t *chip8, uint16_t program_end)
         instruction.nibbles[3] = instruction.bytes[1] - (instruction.nibbles[2] << 4);
 
         decode_instruction(&instruction);
-        printf("[%u] ", chip8->PC);
+        printf("[%u] ", chip8->registers->PC);
         print_instruction(&instruction);
 
-        chip8->PC += 2;
+        chip8->registers->PC += 2;
     }
 }

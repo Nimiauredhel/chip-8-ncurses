@@ -62,7 +62,7 @@ const InstructionSchema_t instruction_schemas[CHIP8_INSTRUCTION_COUNT] =
     OPSCH_X__,
 };
 
-void decode_instruction(Instruction_t *instruction)
+void decode_instruction(Chip8Instruction_t *instruction)
 {
     // macroing this because changing my mind ONCE was tedious enough
 #define RETURN_OPCODE(opcode) instruction->op_idx = opcode; return
