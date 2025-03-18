@@ -280,40 +280,57 @@ void execute_instruction(Chip8_t *chip8, Instruction_t *instruction, WINDOW *win
             = instruction->bytes[1] & chip8->RNG;
             break;
         case OP_DRW_VX_VY_NIBBLE:
+#define X TEMP0_BYTE0
+#define Y TEMP0_BYTE1
+#define READ_POSITION TEMP1_BYTE0
+#define READ_END TEMP1_BYTE1
+#define WRITE_POSITION TEMP2_BYTE0
+#define BIT_OFFSET TEMP2_BYTE1
             // VF = collision, init to zero, actual check later
             chip8->V_REGS[15] = 0;
 
-            TEMP0_BYTE0 = chip8->V_REGS[instruction->nibbles[1]]
-            & CHIP8_DISPLAY_X_MAX; // set x coord (AND 7 for wrapping)
-            TEMP0_BYTE1 = chip8->V_REGS[instruction->nibbles[2]]
+            X = chip8->V_REGS[instruction->nibbles[1]]
+            & CHIP8_DISPLAY_X_MAX; // set x coord (AND 63 for wrapping)
+            Y = chip8->V_REGS[instruction->nibbles[2]]
             & CHIP8_DISPLAY_Y_MAX; // set y coord (AND 31 for wrapping)
 
             // iterating up to <last nibble> rows, reading from <I register> RAM location,
             // writing to display starting from <x, y> and going down
-            TEMP1_BYTE0 = chip8->I_REG;
-            TEMP1_BYTE1 = chip8->I_REG + instruction->nibbles[3];
+            READ_POSITION = chip8->I_REG;
+            READ_END = chip8->I_REG + instruction->nibbles[3];
 
-            for (; TEMP1_BYTE0 < TEMP1_BYTE1; TEMP1_BYTE0++)
+            for (; READ_POSITION < READ_END; READ_POSITION++)
             {
                 // translating coords to array index for this iteration
-                TEMP2_BYTE0 = CHIP8_DISPLAY_INDEX(TEMP0_BYTE0, TEMP0_BYTE1);
-                // incrementing x coord for next iteration
-                TEMP0_BYTE0++;
-                if (TEMP0_BYTE0 >= CHIP8_DISPLAY_ROW_BYTES)
-                {
-                    // incrementing y when x wraps around
-                    TEMP0_BYTE0 -= CHIP8_DISPLAY_ROW_BYTES;
-                    TEMP0_BYTE1 = (TEMP0_BYTE1 + 1) & CHIP8_DISPLAY_Y_MAX;
-                }
+                WRITE_POSITION = CHIP8_DISPLAY_INDEX(X, Y);
+
+                // check offset from 8-bit alignment
+                BIT_OFFSET = X % 8;
 
                 // check for collision (if not collided yet)
-                chip8->V_REGS[15] |= (chip8->DISPLAY[TEMP2_BYTE0] & chip8->RAM[TEMP1_BYTE0]);
+                chip8->V_REGS[15] |= (chip8->DISPLAY[WRITE_POSITION]
+                                   & (chip8->RAM[READ_POSITION] >> BIT_OFFSET));
+                chip8->V_REGS[15] |= (chip8->DISPLAY[(WRITE_POSITION+1) & CHIP8_DISPLAY_SIZE]
+                                   & (chip8->RAM[READ_POSITION] << (8 - BIT_OFFSET)));
                 // TODO: figure out if this works as well as or better than the following:
                 // if (chip8->V_REGS[15] == 0) chip8->V_REGS[15]
                 // = chip8->DISPLAY[TEMP1_BYTE1] & chip8->RAM[TEMP1_BYTE0];
 
                 // actually XORing the pixels together
-                chip8->DISPLAY[TEMP2_BYTE0] ^= chip8->RAM[TEMP1_BYTE0];
+                chip8->DISPLAY[WRITE_POSITION]
+                ^= (chip8->RAM[READ_POSITION] >> BIT_OFFSET);
+                chip8->DISPLAY[(WRITE_POSITION+1) & CHIP8_DISPLAY_SIZE]
+                ^= (chip8->RAM[READ_POSITION] << (8 - BIT_OFFSET));
+
+                // incrementing x coord for next iteration
+                X++;
+
+                if (X > CHIP8_DISPLAY_X_MAX)
+                {
+                    // incrementing y when x wraps around
+                    X &= CHIP8_DISPLAY_X_MAX;
+                    Y = (Y + 1) & CHIP8_DISPLAY_Y_MAX;
+                }
             }
 
             render_display(chip8, window_chip8);
