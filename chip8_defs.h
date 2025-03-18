@@ -44,9 +44,11 @@
 #define CHIP8_DISPLAY_X_MAX (CHIP8_DISPLAY_WIDTH - 1)
 #define CHIP8_DISPLAY_Y_MAX (CHIP8_DISPLAY_HEIGHT - 1)
 #define CHIP8_DISPLAY_ROW_BYTE_MAX (CHIP8_DISPLAY_ROW_BYTES - 1)
-#define CHIP8_DISPLAY_INDEX(x, y) (y + (x * CHIP8_DISPLAY_HEIGHT))
+#define CHIP8_DISPLAY_INDEX(x, y) (y + ((x / 8) * CHIP8_DISPLAY_HEIGHT))
 #define CHIP8_DISPLAY_BYTES (CHIP8_DISPLAY_ROW_BYTES * CHIP8_DISPLAY_HEIGHT)
 
+       // col = idx / CHIP8_DISPLAY_HEIGHT;
+       // row = idx % CHIP8_DISPLAY_HEIGHT;
 // super chip 48 defines are commented out for convenience
 // until I actually implement super chip 48 support
 /*

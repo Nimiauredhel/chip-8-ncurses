@@ -5,9 +5,9 @@ void init_display(DisplayLayout_t *layout)
     initscr();
 
     layout->window_chip8 = newwin(CHIP8_DISPLAY_HEIGHT+2, CHIP8_DISPLAY_WIDTH+2, 0, 0);
-    layout->window_disassembly = newwin(4, 64, 0, CHIP8_DISPLAY_WIDTH+2);
-    layout->window_registers = newwin(24, 64, 4, CHIP8_DISPLAY_WIDTH+2);
-    layout->window_emu = newwin(8, 32, 28, CHIP8_DISPLAY_WIDTH+2);
+    layout->window_disassembly = newwin(2, 64, 0, CHIP8_DISPLAY_WIDTH+2);
+    layout->window_registers = newwin(23, 64, 2, CHIP8_DISPLAY_WIDTH+2);
+    layout->window_emu = newwin(8, 32, 24, CHIP8_DISPLAY_WIDTH+2);
     wclear(layout->window_chip8);
     wclear(layout->window_disassembly);
     wclear(layout->window_emu);
@@ -35,8 +35,8 @@ void render_display(Chip8_t *chip8, WINDOW *window_chip8)
 
     for (int idx = 0; idx < CHIP8_DISPLAY_BYTES; idx++)
     {
-        col = idx % CHIP8_DISPLAY_ROW_BYTES;
-        row = idx / CHIP8_DISPLAY_ROW_BYTES;
+        col = idx / CHIP8_DISPLAY_HEIGHT;
+        row = idx % CHIP8_DISPLAY_HEIGHT;
         byte = chip8->display_memory[idx];
 
         for (int bit = 0; bit < 8; bit++)
@@ -54,9 +54,8 @@ void render_display(Chip8_t *chip8, WINDOW *window_chip8)
 void render_disassembly(Chip8Instruction_t *instruction, WINDOW *window_disassembly)
 {
     wclear(window_disassembly);
-    box(window_disassembly, 0, 0);
 
-    mvwprintw_instruction(window_disassembly, 1, 6, instruction);
+    mvwprintw_instruction(window_disassembly, 1, 1, instruction);
 
     wrefresh(window_disassembly);
 }
@@ -68,15 +67,15 @@ void render_registers(Chip8Registers_t *registers, WINDOW *window_registers)
 
     mvwprintw(window_registers, 1, 1, "PC[%u] ", registers->PC);
 
-    for (int i = 2; i <= 18; i++)
+    for (int i = 0; i < 16; i++)
     {
-        mvwprintw(window_registers, i, 1, "V%d[%u]", i, registers->V_REGS[i]);
+        mvwprintw(window_registers, i+2, 1, "V%d[%u]", i, registers->V_REGS[i]);
     }
 
-    mvwprintw(window_registers, 19, 1, "I[%u]", registers->I_REG);
-    mvwprintw(window_registers, 20, 1, "SP[%u]", registers->SP);
-    mvwprintw(window_registers, 21, 1, "DT[%u]", registers->DT);
-    mvwprintw(window_registers, 22, 1, "ST[%u]", registers->ST);
+    mvwprintw(window_registers, 18, 1, "I[%u]", registers->I_REG);
+    mvwprintw(window_registers, 19, 1, "SP[%u]", registers->SP);
+    mvwprintw(window_registers, 20, 1, "DT[%u]", registers->DT);
+    mvwprintw(window_registers, 21, 1, "ST[%u]", registers->ST);
 
     wrefresh(window_registers);
 }

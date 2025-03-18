@@ -38,6 +38,18 @@ int main(int argc, char *argv[])
         while (should_run)
         {
             Chip8_t *chip8 = create_instance(rom_path);
+ /*           
+            uint16_t inst[6] =
+            {
+                0xE000,
+                0x0160,
+                0x0261,
+                0x29F3,
+                0x1AD0,
+                0x0012
+            };
+            memcpy(chip8->RAM + 512, inst, 12);
+   */         
             printf("Beginning execution.\n");
             usleep(200000);
             should_run = run(chip8);

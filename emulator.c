@@ -37,8 +37,8 @@ bool run(Chip8_t *chip8)
 
     while (chip8->registers->PC < 0xFFF && !should_terminate && !chip8->emu_state->should_reset)
     {
-        chip8->emu_state->key = getch();
         usleep(tick_delay_us);
+        chip8->emu_state->key = getch();
 
         switch(chip8->emu_state->key)
         {
@@ -263,36 +263,37 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
             break;
         case OP_DRW_VX_VY_NIBBLE:
             // extensive macros to make this more sane to read
-#define X_ORIG chip8->registers->V_REGS[instruction->nibbles[1]]
-#define Y_ORIG chip8->registers->V_REGS[instruction->nibbles[2]]
+#define COL_ORIG chip8->registers->V_REGS[instruction->nibbles[1]]
+#define ROW_ORIG chip8->registers->V_REGS[instruction->nibbles[2]]
 #define READ_START chip8->registers->I_REG
 #define READ_LENGTH instruction->nibbles[3]
 
-#define X_POS TEMP0_BYTE0 // destination x position
-#define Y_POS TEMP0_BYTE1 // destination y position
+#define COL_POS TEMP0_BYTE0 // destination row position
+#define ROW_POS TEMP0_BYTE1 // destination col position
 #define INDEX TEMP1_BYTE0 // running counter of the write operation
 #define BIT_OFFSET TEMP1_BYTE1 // how many bits to the right are we shiting
 #define WRITE_POS_LEFT TEMP2_BYTE0 // RAM index to receive the leftmost bits
 #define WRITE_POS_RIGHT TEMP2_BYTE1 // RAM index to receive the rightmost bits
 
+//#define DEBUG_DRW
             // VF = collision, init to zero, actual check later
             VF = 0;
 
-            // init x coord (AND 63 for wrapping)
-            X_POS = X_ORIG & CHIP8_DISPLAY_X_MAX;
-            // init y coord (AND 31 for wrapping)
-            Y_POS = Y_ORIG & CHIP8_DISPLAY_Y_MAX;
+            // init row coord (AND 31 for wrapping)
+            ROW_POS = ROW_ORIG & CHIP8_DISPLAY_Y_MAX;
+            // init col coord (AND 63 for wrapping)
+            COL_POS = COL_ORIG & CHIP8_DISPLAY_X_MAX;
 
             // iterating <read length> rows, reading from <read start> RAM location,
             // writing to display starting from <x origin, y origin>
             for (INDEX = 0; INDEX < READ_LENGTH; INDEX++)
             {
                 // check offset from 8-bit alignment
-                BIT_OFFSET = X_POS % 8;
+                BIT_OFFSET = COL_POS % 8;
 
                 // translating current coords to write position
-                WRITE_POS_LEFT = CHIP8_DISPLAY_INDEX(X_POS, Y_POS);
-                WRITE_POS_RIGHT = CHIP8_DISPLAY_INDEX((X_POS + 1) & CHIP8_DISPLAY_X_MAX, Y_POS);
+                WRITE_POS_LEFT = CHIP8_DISPLAY_INDEX(COL_POS, ROW_POS);
+                WRITE_POS_RIGHT = CHIP8_DISPLAY_INDEX((COL_POS + 1) & CHIP8_DISPLAY_X_MAX, ROW_POS);
 
                 // check for collision (if not collided yet)
                 VF |= (chip8->display_memory[WRITE_POS_LEFT]
@@ -306,11 +307,19 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
                 // actually XORing the pixels together
                 chip8->display_memory[WRITE_POS_LEFT]
                 ^= (chip8->RAM[READ_START + INDEX] >> BIT_OFFSET);
+#ifdef DEBUG_DRW
+                render_display(chip8, window_chip8);
+                usleep(100000);
+#endif
                 chip8->display_memory[WRITE_POS_RIGHT]
                 ^= (chip8->RAM[READ_START + INDEX] << (8 - BIT_OFFSET));
+#ifdef DEBUG_DRW
+                render_display(chip8, window_chip8);
+                usleep(400000);
+#endif
 
                 // incrementing y coord for next iteration
-                Y_POS++;
+                ROW_POS++;
 
                 // sprites are 5 bytes high, so going over 5 implies new column
                 /*if (INDEX % CHIP8_DEFAULT_SPRITE_HEIGHT == 0)
@@ -321,9 +330,9 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
 
                 // if y goes out the bottom it should wrap back from the top,
                 // which importantly does NOT affect x
-                if (Y_POS > CHIP8_DISPLAY_Y_MAX)
+                if (ROW_POS > CHIP8_DISPLAY_Y_MAX)
                 {
-                    Y_POS &= CHIP8_DISPLAY_Y_MAX;
+                    ROW_POS &= CHIP8_DISPLAY_Y_MAX;
                 }
             }
 
