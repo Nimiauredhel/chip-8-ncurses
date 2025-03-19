@@ -25,6 +25,7 @@ typedef struct Chip8Registers
 
 typedef struct EmulatorState
 {
+    // TODO: compress the separate state flags into a single state enum
     bool should_reset;
     bool step_mode;
     bool step_pressed;

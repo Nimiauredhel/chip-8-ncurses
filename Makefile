@@ -1,15 +1,16 @@
 PROGRAM=program
+FLAGS= -std=c99 -Wall -pedantic -Wextra -fshort-enums
 ARGS=
 INC=-lncurses -ltinfo
 
 default:
-	gcc *.c $(INC) -o $(PROGRAM).o
+	gcc *.c $(INC) $(FLAGS) -o $(PROGRAM).o
                                      
 strict:                              
-	bear -- gcc *.c $(INC) -std=c99 -Wall -pedantic -Wextra -o $(PROGRAM).o
+	bear -- gcc *.c $(INC) $(FLAGS) -o $(PROGRAM).o
                     
 debug:              
-	gcc *.c $(INC) -std=c99 -Wall -pedantic -Wextra -g -o $(PROGRAM).o
+	gcc *.c $(INC) $(FLAGS) -g -o $(PROGRAM).o
 
 run:
 	./$(PROGRAM).o $(ARGS)

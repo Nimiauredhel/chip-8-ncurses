@@ -21,7 +21,11 @@ int main(int argc, char *argv[])
 
     char *rom_path;
 
-    if (strcmp(argv[1], "d") == 0 && argc > 2)
+    if (should_terminate)
+    {
+        printf("Okay, never mind then...");
+    }
+    else if (strcmp(argv[1], "d") == 0 && argc > 2)
     {
         rom_path = argv[2];
         Chip8_t *chip8 = create_instance(rom_path);

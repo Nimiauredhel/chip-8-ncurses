@@ -9,7 +9,8 @@
 typedef enum OpcodeIndex
 {
     OP_UNKNOWN = 0,
-    // chip 8 ops
+    
+    // *** Chip-8 Ops ***
 
     OP_SYS_ADDR = 1, // 0nnn
 
@@ -59,7 +60,7 @@ typedef enum OpcodeIndex
     OP_LD_I_VX = 34, // Fx55
     OP_LD_VX_I = 35, // Fx65
 
-    // super chip 49 ops
+    // *** Super Chip-48 Ops ***
 
     // 0x01__ ops
     OP_SUPER_SCD_NIBBLE = 36,
