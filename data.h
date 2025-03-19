@@ -39,12 +39,21 @@ typedef struct EmulatorState
     int key;
 } EmulatorState_t;
 
+typedef struct DisplayLayout
+{
+    WINDOW *window_chip8;
+    WINDOW *window_emu;
+    WINDOW *window_disassembly;
+    WINDOW *window_registers;
+} DisplayLayout_t;
+
 typedef struct Chip8
 {
     EmulatorState_t *emu_state;
     Chip8Registers_t *registers;
     uint8_t *display_memory;
     Chip8Instruction_t *instruction;
+    DisplayLayout_t layout;
     uint8_t RAM[CHIP8_RAM_BYTES];
 } Chip8_t;
 

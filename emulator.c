@@ -18,22 +18,15 @@ bool run(Chip8_t *chip8)
 
     chip8->emu_state->key = '~';
 
-    DisplayLayout_t layout;
-
     // intentionally discarding the const qualifier ONCE to init the value
     // hope the police don't get me
     clock_gettime(CLOCK_MONOTONIC, (struct timespec *)&start_clock);
 
-    init_display(&layout);
-
-    cbreak();
-    nodelay(stdscr, true);
-    noecho();
-
-    render_display(chip8, layout.window_chip8);
-    render_registers(chip8->registers, layout.window_registers);
-    render_disassembly(chip8->instruction, layout.window_disassembly);
-    render_emulator_state(chip8->emu_state, layout.window_emu);
+    init_display(&chip8->layout);
+    render_display(chip8, chip8->layout.window_chip8);
+    render_registers(chip8->registers, chip8->layout.window_registers);
+    render_disassembly(chip8->instruction, chip8->layout.window_disassembly);
+    render_emulator_state(chip8->emu_state, chip8->layout.window_emu);
 
     while (chip8->registers->PC < 0xFFF && !should_terminate && !chip8->emu_state->should_reset)
     {
@@ -102,9 +95,6 @@ bool run(Chip8_t *chip8)
         chip8->emu_state->tick_counter = 0;
         chip8->emu_state->frame_counter++;
         chip8->emu_state->avg_fps = chip8->emu_state->frame_counter / chip8->emu_state->seconds_counter;
-
-        render_emulator_state(chip8->emu_state, layout.window_emu);
-        render_registers(chip8->registers, layout.window_registers);
         
         if (chip8->registers->DT > 0) chip8->registers->DT--;
         if (chip8->registers->ST > 0) chip8->registers->ST--;
@@ -118,18 +108,22 @@ bool run(Chip8_t *chip8)
         chip8->instruction->nibbles[3] = chip8->instruction->bytes[1] - (chip8->instruction->nibbles[2] << 4);
 
         decode_instruction(chip8->instruction);
-        render_disassembly(chip8->instruction, layout.window_disassembly);
+        render_disassembly(chip8->instruction, chip8->layout.window_disassembly);
 
-        execute_instruction(chip8, chip8->instruction, layout.window_chip8);
+        execute_instruction(chip8, chip8->instruction, chip8->layout.window_chip8);
+
+        render_emulator_state(chip8->emu_state, chip8->layout.window_emu);
 
         chip8->registers->PC += 2;
+        render_registers(chip8->registers, chip8->layout.window_registers);
     }
 
     usleep(250000);
     
-    delwin(layout.window_chip8);
-    delwin(layout.window_disassembly);
-    delwin(layout.window_emu);
+    delwin(chip8->layout.window_chip8);
+    delwin(chip8->layout.window_disassembly);
+    delwin(chip8->layout.window_registers);
+    delwin(chip8->layout.window_emu);
     endwin();
     printf(chip8->registers->PC > 0xFFF ? "PC out of bounds!\n" : chip8->emu_state->should_reset ? "Restarting!\n" : "Program over!\n");
     usleep(500000);
