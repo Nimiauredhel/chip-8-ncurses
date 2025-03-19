@@ -13,10 +13,8 @@ bool run(Chip8_t *chip8)
     chip8->emu_state->speed_modifier = 1.0f;
     chip8->emu_state->tick_increment = tick_delay_us * chip8->emu_state->speed_modifier;
     chip8->emu_state->tick_counter = 0;
-    chip8->emu_state->frame_counter = 0;
+    chip8->emu_state->step_counter = 0;
     chip8->emu_state->seconds_counter = 0.0f;
-
-    chip8->emu_state->key = '~';
 
     // intentionally discarding the const qualifier ONCE to init the value
     // hope the police don't get me
@@ -30,10 +28,11 @@ bool run(Chip8_t *chip8)
 
     while (chip8->registers->PC < 0xFFF && !should_terminate && !chip8->emu_state->should_reset)
     {
+        chip8->key = EMU_KEY_NEUTRAL;
         usleep(tick_delay_us);
-        chip8->emu_state->key = getch();
+        chip8->key = getch();
 
-        switch(chip8->emu_state->key)
+        switch(chip8->key)
         {
             case EMU_KEY_RESET:
                 chip8->emu_state->should_reset = true;
@@ -66,13 +65,11 @@ bool run(Chip8_t *chip8)
 
         if (chip8->emu_state->step_mode)
         {
-            if (chip8->emu_state->key == EMU_KEY_STEP_MODE)
+            if (chip8->key == EMU_KEY_STEP_MODE)
             {
                 chip8->emu_state->step_mode = false;
                 continue;
             }
-
-            chip8->emu_state->key = EMU_KEY_NEUTRAL;
 
             if (chip8->emu_state->step_pressed)
             {
@@ -82,7 +79,6 @@ bool run(Chip8_t *chip8)
         }
         else 
         {
-            chip8->emu_state->key = EMU_KEY_NEUTRAL;
             chip8->emu_state->seconds_counter = seconds_since_clock(start_clock);
 
             if(chip8->emu_state->tick_counter < tick_threshold)
@@ -92,13 +88,19 @@ bool run(Chip8_t *chip8)
             }
         }
 
+        // resetting step timer
         chip8->emu_state->tick_counter = 0;
-        chip8->emu_state->frame_counter++;
-        chip8->emu_state->avg_fps = chip8->emu_state->frame_counter / chip8->emu_state->seconds_counter;
+
+        // updating timing stats
+        // TODO: make the tracking & rendering of stats optional
+        chip8->emu_state->step_counter++;
+        chip8->emu_state->avg_fps = chip8->emu_state->step_counter / chip8->emu_state->seconds_counter;
         
+        // deincrementing timer registers
         if (chip8->registers->DT > 0) chip8->registers->DT--;
         if (chip8->registers->ST > 0) chip8->registers->ST--;
 
+        // parsing current instruction elements into a structure
         chip8->instruction->bytes[0] = chip8->RAM[chip8->registers->PC];
         chip8->instruction->bytes[1] = chip8->RAM[chip8->registers->PC + 1];
 
@@ -107,14 +109,29 @@ bool run(Chip8_t *chip8)
         chip8->instruction->nibbles[2] = chip8->instruction->bytes[1] >> 4;
         chip8->instruction->nibbles[3] = chip8->instruction->bytes[1] - (chip8->instruction->nibbles[2] << 4);
 
+        // decoding & updating the opcode field in the instruction struct
         decode_instruction(chip8->instruction);
+
+        // rendering the disassembled instruction
+        // TODO: make this optional
         render_disassembly(chip8->instruction, chip8->layout.window_disassembly);
 
+        // executing the actual instruction;
+        // this also refreshes the display if necessary
+        // TODO: figure out if setting a display_dirty flag would be better
         execute_instruction(chip8, chip8->instruction, chip8->layout.window_chip8);
 
+        // render emulator (mostly timing) stats
+        // TODO: as noted above, make this optional
         render_emulator_state(chip8->emu_state, chip8->layout.window_emu);
 
+        // default PC incrementation following execution;
+        // jump/skip instructions account for this by decrementing the PC to compensate.
+        // TODO: figure out if incrementing in the instruction code could be an improvement
         chip8->registers->PC += 2;
+
+        // render content of Chip-8 & extra VM registers.
+        // TODO: make this optional
         render_registers(chip8->registers, chip8->layout.window_registers);
     }
 
@@ -125,8 +142,10 @@ bool run(Chip8_t *chip8)
     delwin(chip8->layout.window_registers);
     delwin(chip8->layout.window_emu);
     endwin();
-    printf(chip8->registers->PC > 0xFFF ? "PC out of bounds!\n" : chip8->emu_state->should_reset ? "Restarting!\n" : "Program over!\n");
+    printf(chip8->registers->PC >= 0xFFF ? "PC out of bounds!\n" : chip8->emu_state->should_reset ? "Restarting!\n" : "Program over!\n");
     usleep(500000);
+
+    // return the "reset" flag, telling the program whether to quit or create another Chip-8 instance
     return chip8->emu_state->should_reset;
 }
 

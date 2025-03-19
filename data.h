@@ -32,11 +32,9 @@ typedef struct EmulatorState
     float speed_modifier;
     uint32_t tick_increment;
     uint32_t tick_counter;
-    uint32_t frame_counter;
+    uint32_t step_counter;
     float seconds_counter;
     float avg_fps;
-
-    int key;
 } EmulatorState_t;
 
 typedef struct DisplayLayout
@@ -53,11 +51,13 @@ typedef struct Chip8
     Chip8Registers_t *registers;
     uint8_t *display_memory;
     Chip8Instruction_t *instruction;
+    int key;
     DisplayLayout_t layout;
     uint8_t RAM[CHIP8_RAM_BYTES];
 } Chip8_t;
 
-extern const uint8_t default_sprites[CHIP8_DEFAULT_SPRITES_SIZE];
+extern const int chip8_key_table[16];
+extern const uint8_t chip8_default_sprites[CHIP8_DEFAULT_SPRITES_SIZE];
 
 Chip8_t *create_instance(char *rom_path);
 void load_default_sprites(Chip8_t *chip8);
