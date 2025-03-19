@@ -214,13 +214,13 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
         case OP_ADD_VX_VY:
             chip8->registers->EMU_TEMP[0].word = chip8->registers->V_REGS[instruction->nibbles[1]]
             + chip8->registers->V_REGS[instruction->nibbles[2]];
-            VF = chip8->registers->EMU_TEMP[0].word > 255; // set VF to 1 if result greater than 255.
+            VF = chip8->registers->EMU_TEMP[0].word > 255 ? 1 : 0; // set VF to 1 if result greater than 255.
             chip8->registers->V_REGS[instruction->nibbles[1]] // setting Vx to the result AND 255,
             = (uint8_t)(chip8->registers->EMU_TEMP[0].word & 255); // to properly discard bits 8 and up
             break;
         case OP_SUB_VX_VY:
             VF = chip8->registers->V_REGS[instruction->nibbles[1]]
-            > chip8->registers->V_REGS[instruction->nibbles[2]];
+            > chip8->registers->V_REGS[instruction->nibbles[2]] ? 1 : 0;
             chip8->registers->V_REGS[instruction->nibbles[1]]
             -= chip8->registers->V_REGS[instruction->nibbles[2]];
             break;
@@ -230,7 +230,7 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
             break;
         case OP_SUBN_VX_VY:
             VF = chip8->registers->V_REGS[instruction->nibbles[2]]
-            > chip8->registers->V_REGS[instruction->nibbles[1]];
+            > chip8->registers->V_REGS[instruction->nibbles[1]] ? 1 : 0;
             chip8->registers->V_REGS[instruction->nibbles[1]]
             = chip8->registers->V_REGS[instruction->nibbles[2]] - chip8->registers->V_REGS[instruction->nibbles[1]];
             break;
@@ -293,13 +293,13 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
 
                 // translating current coords to write position
                 WRITE_POS_LEFT = CHIP8_DISPLAY_INDEX(COL_POS, ROW_POS);
-                WRITE_POS_RIGHT = CHIP8_DISPLAY_INDEX((COL_POS + 1) & CHIP8_DISPLAY_X_MAX, ROW_POS);
+                WRITE_POS_RIGHT = (WRITE_POS_LEFT + CHIP8_DISPLAY_HEIGHT);
 
                 // check for collision (if not collided yet)
                 VF |= (chip8->display_memory[WRITE_POS_LEFT]
                                    & (chip8->RAM[READ_START + INDEX] >> BIT_OFFSET));
                 VF |= (chip8->display_memory[WRITE_POS_RIGHT]
-                                   & (chip8->RAM[READ_START + INDEX] << (8 - BIT_OFFSET)));
+                                   & (chip8->RAM[READ_START + INDEX] << (uint8_t)(8 - BIT_OFFSET)));
                 // TODO: figure out if this works as well as or better than the following:
                 // if (VF == 0) VF
                 // = chip8->DISPLAY[WRITE_POS] & chip8->RAM[READ_POS];
@@ -312,7 +312,7 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
                 usleep(100000);
 #endif
                 chip8->display_memory[WRITE_POS_RIGHT]
-                ^= (chip8->RAM[READ_START + INDEX] << (8 - BIT_OFFSET));
+                ^= (chip8->RAM[READ_START + INDEX] << (uint8_t)(8 - BIT_OFFSET));
 #ifdef DEBUG_DRW
                 render_display(chip8, window_chip8);
                 usleep(400000);
@@ -320,13 +320,6 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
 
                 // incrementing y coord for next iteration
                 ROW_POS++;
-
-                // sprites are 5 bytes high, so going over 5 implies new column
-                /*if (INDEX % CHIP8_DEFAULT_SPRITE_HEIGHT == 0)
-                {
-                    Y_POS = Y_ORIG;
-                    X_POS = (X_POS + 1) & CHIP8_DISPLAY_X_MAX;
-                }*/
 
                 // if y goes out the bottom it should wrap back from the top,
                 // which importantly does NOT affect x
