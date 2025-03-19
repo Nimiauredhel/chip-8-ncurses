@@ -13,14 +13,15 @@ typedef union ComboRegister
 
 typedef struct Chip8Registers
 {
-    uint16_t PC; // program counter
-    uint16_t I_REG; // generally used for RAM addresses
-    uint8_t V_REGS[16]; // general purpose registers (except the last one)
-    ComboRegister_t EMU_TEMP[3]; // three 16 bit (or six 8 bit) registers I added for the instructions to use
-    uint8_t SP; // "stack pointer", holds current index for the return addresses array
-    uint16_t STACK_RET[16]; // "stack" - subroutine return addresses
     uint8_t ST; // sound timer
     uint8_t DT; // delay timer
+    uint8_t SP; // "stack pointer", holds current index for the return addresses array
+    uint16_t PC; // program counter
+    uint16_t I_REG; // generally used for RAM addresses
+    uint16_t KEYS; // bit field representing the state of all 16 Chip-8 keys
+    uint8_t V_REGS[16]; // general purpose registers (except the last one)
+    uint16_t STACK_RET[16]; // "stack" - subroutine return addresses
+    ComboRegister_t EMU_TEMP[3]; // three 16 bit (or six 8 bit) registers I added for the instructions to use
 } Chip8Registers_t;
 
 typedef struct EmulatorState
@@ -30,6 +31,7 @@ typedef struct EmulatorState
     bool step_mode;
     bool step_pressed;
 
+    uint8_t keys; // bit field representing the state of emulator keys
     uint16_t step_delay_us;
     uint32_t step_counter;
     float speed_modifier;
@@ -51,12 +53,10 @@ typedef struct Chip8
     Chip8Registers_t *registers;
     uint8_t *display_memory;
     Chip8Instruction_t *instruction;
-    int key;
     DisplayLayout_t layout;
     uint8_t RAM[CHIP8_RAM_BYTES];
 } Chip8_t;
 
-extern const int chip8_key_table[16];
 extern const uint8_t chip8_default_sprites[CHIP8_DEFAULT_SPRITES_SIZE];
 
 Chip8_t *create_instance(char *rom_path);

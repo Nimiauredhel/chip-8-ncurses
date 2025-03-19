@@ -1,5 +1,132 @@
 #include "emulator.h"
 
+void read_input(uint16_t *chip8_key_states, uint8_t *emu_key_states)
+{
+    KeyBind_t key = ERR;
+
+    *chip8_key_states = 0x0;
+    *emu_key_states = 0x0;
+
+    // loop over several getch() calls to allow concurrent keypresses
+    for (int i = 0; i < 8; i++)
+    {
+        key = getch();
+
+        switch(key)
+        {
+            case KEY_NONE:
+                // if no key detected, we're done here
+                return;
+            case EMU_KEY_QUIT_BIND:
+                *emu_key_states |= (1 << EMU_KEY_QUIT_IDX);
+                break;
+            case EMU_KEY_SPEED_UP_BIND:
+                *emu_key_states |= (1 << EMU_KEY_SPEED_UP_IDX);
+                break;
+            case EMU_KEY_SPEED_DOWN_BIND:
+                *emu_key_states |= (1 << EMU_KEY_SPEED_DOWN_IDX);
+                break;
+            case EMU_KEY_RESET_BIND:
+                *emu_key_states |= (1 << EMU_KEY_RESET_IDX);
+                break;
+            case EMU_KEY_STEP_MODE_BIND:
+                *emu_key_states |= (1 << EMU_KEY_STEP_MODE_IDX);
+                break;
+            case EMU_KEY_STEP_ONE_BIND:
+                *emu_key_states |= (1 << EMU_KEY_STEP_ONE_IDX);
+                break;
+            case CHIP8_KEY_1_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_1_IDX);
+                break;
+            case CHIP8_KEY_2_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_2_IDX);
+                break;
+            case CHIP8_KEY_3_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_3_IDX);
+                break;
+            case CHIP8_KEY_C_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_C_IDX);
+                break;
+            case CHIP8_KEY_4_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_4_IDX);
+                break;
+            case CHIP8_KEY_5_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_5_IDX);
+                break;
+            case CHIP8_KEY_6_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_6_IDX);
+                break;
+            case CHIP8_KEY_D_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_D_IDX);
+                break;
+            case CHIP8_KEY_7_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_7_IDX);
+                break;
+            case CHIP8_KEY_8_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_8_IDX);
+                break;
+            case CHIP8_KEY_9_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_9_IDX);
+                break;
+            case CHIP8_KEY_E_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_E_IDX);
+                break;
+            case CHIP8_KEY_A_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_A_IDX);
+                break;
+            case CHIP8_KEY_0_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_0_IDX);
+                break;
+            case CHIP8_KEY_B_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_B_IDX);
+                break;
+            case CHIP8_KEY_F_BIND:
+                *chip8_key_states |= (1 << CHIP8_KEY_F_IDX);
+                break;
+            }
+    }
+}
+
+bool check_input8(uint8_t key_states, uint8_t key_idx)
+{
+    return key_states & (1 << key_idx);
+}
+
+bool check_input16(uint16_t key_states, uint16_t key_idx)
+{
+    return key_states & (1 << key_idx);
+}
+
+void emu_handle_input(Chip8_t *chip8)
+{
+    if (chip8->emu_state->keys == 0x0) return;
+
+    if (check_input8(chip8->emu_state->keys, EMU_KEY_QUIT_IDX))
+        should_terminate = true;
+
+    if (check_input8(chip8->emu_state->keys, EMU_KEY_RESET_IDX))
+        chip8->emu_state->should_reset = true;
+
+    if (check_input8(chip8->emu_state->keys, EMU_KEY_STEP_MODE_IDX))
+        chip8->emu_state->step_mode = !chip8->emu_state->step_mode;
+
+    if (check_input8(chip8->emu_state->keys, EMU_KEY_STEP_ONE_IDX))
+        chip8->emu_state->step_pressed = true;
+
+    if (check_input8(chip8->emu_state->keys, EMU_KEY_SPEED_UP_IDX))
+    {
+        chip8->emu_state->speed_modifier += EMU_SPEED_INCREMENT;
+        if (chip8->emu_state->speed_modifier > EMU_MAX_SPEED_MOD) chip8->emu_state->speed_modifier = EMU_MAX_SPEED_MOD;
+        chip8->emu_state->step_delay_us = EMU_DEFAULT_STEP_DELAY_US / chip8->emu_state->speed_modifier;
+    }
+    else if (check_input8(chip8->emu_state->keys, EMU_KEY_SPEED_DOWN_IDX))
+    {
+        chip8->emu_state->speed_modifier -= EMU_SPEED_INCREMENT;
+        if (chip8->emu_state->speed_modifier < EMU_MIN_SPEED_MOD) chip8->emu_state->speed_modifier = EMU_MIN_SPEED_MOD;
+        chip8->emu_state->step_delay_us = EMU_DEFAULT_STEP_DELAY_US / chip8->emu_state->speed_modifier;
+    }
+}
+
 bool run(Chip8_t *chip8)
 {
     struct timespec start_clock;
@@ -25,56 +152,21 @@ bool run(Chip8_t *chip8)
 
     while (chip8->registers->PC < 0xFFF && !should_terminate && !chip8->emu_state->should_reset)
     {
-        chip8->key = EMU_KEY_NEUTRAL;
         usleep(chip8->emu_state->step_delay_us);
-        chip8->key = getch();
 
-        switch(chip8->key)
-        {
-            case EMU_KEY_RESET:
-                chip8->emu_state->should_reset = true;
-                break;
-            case EMU_KEY_STEP_MODE:
-                chip8->emu_state->step_mode = true;
-                break;
-            case EMU_KEY_SPEED_UP:
-                chip8->emu_state->speed_modifier += EMU_SPEED_INCREMENT;
-                if (chip8->emu_state->speed_modifier > EMU_MAX_SPEED_MOD) chip8->emu_state->speed_modifier = EMU_MAX_SPEED_MOD;
-                chip8->emu_state->step_delay_us = chip8->emu_state->speed_modifier > 0.0f ?
-                      EMU_DEFAULT_STEP_DELAY_US / chip8->emu_state->speed_modifier : 0.0f;
-                break;
-            case EMU_KEY_SPEED_DOWN:
-                chip8->emu_state->speed_modifier -= EMU_SPEED_INCREMENT;
-                if (chip8->emu_state->speed_modifier < EMU_MIN_SPEED_MOD) chip8->emu_state->speed_modifier = EMU_MIN_SPEED_MOD;
-                chip8->emu_state->step_delay_us = chip8->emu_state->speed_modifier > 0.0f ?
-                      EMU_DEFAULT_STEP_DELAY_US / chip8->emu_state->speed_modifier : 0.0f;
-                break;
-            case EMU_KEY_STEP_ONE:
-                if (chip8->emu_state->step_mode)
-                {
-                    chip8->emu_state->step_pressed = true;
-                }
-                break;
-            case EMU_KEY_NEUTRAL:
-            default:
-                break;
-        }
+        read_input(&chip8->registers->KEYS, &chip8->emu_state->keys);
+        emu_handle_input(chip8);
 
         if (should_terminate) break;
 
-        if (chip8->emu_state->step_mode)
+        while (chip8->emu_state->step_mode)
         {
-            if (chip8->key == EMU_KEY_STEP_MODE)
-            {
-                chip8->emu_state->step_mode = false;
-                continue;
-            }
+            usleep(chip8->emu_state->step_delay_us);
 
-            if (chip8->emu_state->step_pressed)
-            {
-                chip8->emu_state->step_pressed = false;
-            }
-            else continue;
+            read_input(&chip8->registers->KEYS, &chip8->emu_state->keys);
+            emu_handle_input(chip8);
+
+            if (check_input8(chip8->emu_state->keys, EMU_KEY_STEP_ONE_IDX)) break;
         }
 
         // updating timing stats
@@ -345,14 +437,14 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
         case OP_SKP_VX:
             // if key pressed equals value of Vx, skip next instruction
             // TODO: consider combining this instruction and the next with fallthrough
-            if (chip8->key == chip8_key_table[instruction->nibbles[1]])
+            if (check_input16(chip8->registers->KEYS, instruction->nibbles[1]))
             {
                 chip8->registers->PC += 2;
             }
             break;
         case OP_SKNP_VX:
             // if key pressed does not equal value of Vx, skip next instruction
-            if (chip8->key != chip8_key_table[instruction->nibbles[1]])
+            if (!check_input16(chip8->registers->KEYS, instruction->nibbles[1]))
             {
                 chip8->registers->PC += 2;
             }
@@ -366,21 +458,19 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
             // then store the value of that key in register Vx.
 
             // some temporary defines for this instruction:
-#define KEY chip8->key
 #define DONE chip8->registers->EMU_TEMP[0].bytes[0]
 #define INDEX chip8->registers->EMU_TEMP[0].bytes[1]
 #define Vx chip8->registers->V_REGS[instruction->nibbles[1]]
 
             DONE = false;
-            KEY = EMU_KEY_NEUTRAL;
 
             while (!DONE)
             {
-                KEY = getch();
+                read_input(&chip8->registers->KEYS, &chip8->emu_state->keys);
 
                 for (INDEX = 0; INDEX < 16; INDEX++)
                 {
-                    if (KEY == chip8_key_table[INDEX])
+                    if (check_input16(chip8->registers->KEYS, INDEX))
                     {
                         Vx = INDEX;
                         DONE = true;
@@ -388,6 +478,7 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
                     }
                 }
 
+                emu_handle_input(chip8);
                 usleep(chip8->emu_state->step_delay_us);
             }
             break;

@@ -35,8 +35,8 @@ const char instruction_formats[CHIP8_INSTRUCTION_COUNT][32] =
     "RND V%u, %d", // Cxkk RND Vx, byte
     "DRW V%u, V%u, %d", // Dxyn DRW Vx, Vy, nibble
 
-    "SKP Vx", // Ex9E SKP Vx
-    "SKNP Vx", // ExA1 SKNP Vx
+    "SKP V%u", // Ex9E SKP Vx
+    "SKNP V%u", // ExA1 SKNP Vx
 
     "LD V%u, DT", // Fx07 LD Vx, DT
     "LD V%u, K",

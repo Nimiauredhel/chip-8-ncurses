@@ -1,12 +1,5 @@
 #include "data.h"
 
-// stored as ints because ncurses
-const int chip8_key_table[16] =
-{
-    CHIP8_KEY_0, CHIP8_KEY_1, CHIP8_KEY_2, CHIP8_KEY_3, CHIP8_KEY_4, CHIP8_KEY_5, CHIP8_KEY_6, CHIP8_KEY_7, 
-    CHIP8_KEY_8, CHIP8_KEY_9, CHIP8_KEY_A, CHIP8_KEY_B, CHIP8_KEY_C, CHIP8_KEY_D, CHIP8_KEY_E, CHIP8_KEY_F, 
-};
-
 const uint8_t chip8_default_sprites[CHIP8_DEFAULT_SPRITES_SIZE] =
 {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
