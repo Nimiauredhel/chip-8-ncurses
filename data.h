@@ -30,10 +30,9 @@ typedef struct EmulatorState
     bool step_mode;
     bool step_pressed;
 
-    float speed_modifier;
-    uint32_t tick_increment;
-    uint32_t tick_counter;
+    uint16_t step_delay_us;
     uint32_t step_counter;
+    float speed_modifier;
     float seconds_counter;
     float avg_fps;
 } EmulatorState_t;

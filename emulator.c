@@ -2,23 +2,20 @@
 
 bool run(Chip8_t *chip8)
 {
-    const uint32_t tick_delay_us = 8333;
-    const uint32_t tick_threshold = EMU_DEFAULT_DELAY_US;
-    const struct timespec start_clock;
+    struct timespec start_clock;
+
+    // getting the start clock of the instance to track runtime & avg fps;
+    // TODO: make this optional
+    clock_gettime(CLOCK_MONOTONIC, (struct timespec *)&start_clock);
 
     chip8->emu_state->should_reset = false;
     chip8->emu_state->step_mode = false;
     chip8->emu_state->step_pressed = false;
 
     chip8->emu_state->speed_modifier = 1.0f;
-    chip8->emu_state->tick_increment = tick_delay_us * chip8->emu_state->speed_modifier;
-    chip8->emu_state->tick_counter = 0;
+    chip8->emu_state->step_delay_us = EMU_DEFAULT_STEP_DELAY_US;
     chip8->emu_state->step_counter = 0;
     chip8->emu_state->seconds_counter = 0.0f;
-
-    // intentionally discarding the const qualifier ONCE to init the value
-    // hope the police don't get me
-    clock_gettime(CLOCK_MONOTONIC, (struct timespec *)&start_clock);
 
     init_display(&chip8->layout);
     render_display(chip8, chip8->layout.window_chip8);
@@ -29,7 +26,7 @@ bool run(Chip8_t *chip8)
     while (chip8->registers->PC < 0xFFF && !should_terminate && !chip8->emu_state->should_reset)
     {
         chip8->key = EMU_KEY_NEUTRAL;
-        usleep(tick_delay_us);
+        usleep(chip8->emu_state->step_delay_us);
         chip8->key = getch();
 
         switch(chip8->key)
@@ -43,12 +40,14 @@ bool run(Chip8_t *chip8)
             case EMU_KEY_SPEED_UP:
                 chip8->emu_state->speed_modifier += EMU_SPEED_INCREMENT;
                 if (chip8->emu_state->speed_modifier > EMU_MAX_SPEED_MOD) chip8->emu_state->speed_modifier = EMU_MAX_SPEED_MOD;
-                chip8->emu_state->tick_increment = tick_delay_us * chip8->emu_state->speed_modifier;
+                chip8->emu_state->step_delay_us = chip8->emu_state->speed_modifier > 0.0f ?
+                      EMU_DEFAULT_STEP_DELAY_US / chip8->emu_state->speed_modifier : 0.0f;
                 break;
             case EMU_KEY_SPEED_DOWN:
                 chip8->emu_state->speed_modifier -= EMU_SPEED_INCREMENT;
                 if (chip8->emu_state->speed_modifier < EMU_MIN_SPEED_MOD) chip8->emu_state->speed_modifier = EMU_MIN_SPEED_MOD;
-                chip8->emu_state->tick_increment = tick_delay_us * chip8->emu_state->speed_modifier;
+                chip8->emu_state->step_delay_us = chip8->emu_state->speed_modifier > 0.0f ?
+                      EMU_DEFAULT_STEP_DELAY_US / chip8->emu_state->speed_modifier : 0.0f;
                 break;
             case EMU_KEY_STEP_ONE:
                 if (chip8->emu_state->step_mode)
@@ -77,22 +76,10 @@ bool run(Chip8_t *chip8)
             }
             else continue;
         }
-        else 
-        {
-            chip8->emu_state->seconds_counter = seconds_since_clock(start_clock);
-
-            if(chip8->emu_state->tick_counter < tick_threshold)
-            {
-                chip8->emu_state->tick_counter += chip8->emu_state->tick_increment;
-                continue;
-            }
-        }
-
-        // resetting step timer
-        chip8->emu_state->tick_counter = 0;
 
         // updating timing stats
         // TODO: make the tracking & rendering of stats optional
+        chip8->emu_state->seconds_counter = seconds_since_clock(start_clock);
         chip8->emu_state->step_counter++;
         chip8->emu_state->avg_fps = chip8->emu_state->step_counter / chip8->emu_state->seconds_counter;
         
@@ -344,19 +331,70 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
 
             render_display(chip8, window_chip8);
             break;
+            // undefining the DRW instruction aliases
+#undef COL_ORIG
+#undef ROW_ORIG
+#undef READ_START
+#undef READ_LENGTH
+#undef COL_POS
+#undef ROW_POS
+#undef INDEX
+#undef BIT_OFFSET
+#undef WRITE_POS_LEFT
+#undef WRITE_POS_RIGHT
         case OP_SKP_VX:
-            // TODO
+            // if key pressed equals value of Vx, skip next instruction
+            // TODO: consider combining this instruction and the next with fallthrough
+            if (chip8->key == chip8_key_table[instruction->nibbles[1]])
+            {
+                chip8->registers->PC += 2;
+            }
             break;
         case OP_SKNP_VX:
-            // TODO
+            // if key pressed does not equal value of Vx, skip next instruction
+            if (chip8->key != chip8_key_table[instruction->nibbles[1]])
+            {
+                chip8->registers->PC += 2;
+            }
             break;
         case OP_LD_VX_DT:
             chip8->registers->V_REGS[instruction->nibbles[1]]
             = chip8->registers->DT;
             break;
         case OP_LD_VX_K:
-            // TODO
+            // LD Vx K - halt execution until any (Chip-8) key is pressed,
+            // then store the value of that key in register Vx.
+
+            // some temporary defines for this instruction:
+#define KEY chip8->key
+#define DONE chip8->registers->EMU_TEMP[0].bytes[0]
+#define INDEX chip8->registers->EMU_TEMP[0].bytes[1]
+#define Vx chip8->registers->V_REGS[instruction->nibbles[1]]
+
+            DONE = false;
+            KEY = EMU_KEY_NEUTRAL;
+
+            while (!DONE)
+            {
+                KEY = getch();
+
+                for (INDEX = 0; INDEX < 16; INDEX++)
+                {
+                    if (KEY == chip8_key_table[INDEX])
+                    {
+                        Vx = INDEX;
+                        DONE = true;
+                        break;
+                    }
+                }
+
+                usleep(chip8->emu_state->step_delay_us);
+            }
             break;
+#undef KEY
+#undef DONE
+#undef INDEX
+#undef Vx
         case OP_LD_DT_VX:
             chip8->registers->DT
             = chip8->registers->V_REGS[instruction->nibbles[1]];

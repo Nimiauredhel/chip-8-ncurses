@@ -4,18 +4,18 @@
 // *** VM definitions ***
 
 // emulator constants
-#define EMU_DEFAULT_DELAY_US (16666) // 60 hz
-#define EMU_SPEED_INCREMENT (0.05f)
+#define EMU_DEFAULT_STEP_DELAY_US (16666) // 60hz execution step frequency
+#define EMU_SPEED_INCREMENT (0.1f)
 #define EMU_MIN_SPEED_MOD (0.0f) // 0 hz
-#define EMU_MAX_SPEED_MOD (100.0f) // 6000 hz
+#define EMU_MAX_SPEED_MOD (4.0f) // "240hz"
 
 // emulator controls
-#define EMU_KEY_NEUTRAL ('~')
-#define EMU_KEY_SPEED_UP ('+')
-#define EMU_KEY_SPEED_DOWN ('_')
-#define EMU_KEY_RESET ('|')
-#define EMU_KEY_STEP_MODE ('P')
-#define EMU_KEY_STEP_ONE ('p')
+#define EMU_KEY_NEUTRAL ('~') // tilde - unused, only signifies "no key pressed"
+#define EMU_KEY_SPEED_UP ('+') // Shift-Plus
+#define EMU_KEY_SPEED_DOWN ('_') // Shift-Minus 
+#define EMU_KEY_RESET ('|') // Shift-\ -terminate the current instance and immediately launch another
+#define EMU_KEY_STEP_MODE ('P') // Shift-P - enter/exit step mode
+#define EMU_KEY_STEP_ONE ('p') // P - execute a single step in step mode
 
 // *** CHIP-8 definitions ***
 
