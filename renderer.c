@@ -96,8 +96,8 @@ void render_emulator_state(EmulatorState_t *emu_state, WINDOW *window_emu)
     box(window_emu, 0, 0);
     mvwprintw(window_emu, 1, 1, "Speed[%.2f]", emu_state->speed_modifier);
     mvwprintw(window_emu, 2, 1, "Step Counter[%u]", emu_state->step_counter);
-    mvwprintw(window_emu, 3, 1, "Runtime[%.2fs]", emu_state->seconds_counter);
-    mvwprintw(window_emu, 4, 1, "Avg. FPS[%.2f]", emu_state->avg_fps);
+    mvwprintw(window_emu, 3, 1, "Runtime[%.2fs]", emu_state->runtime_seconds_counter);
+    mvwprintw(window_emu, 4, 1, "Avg. FPS[%.2f]", emu_state->avg_cps);
     //mvwprintw(window_emu, 5, 1, "Tick Counter[%u/%u]", tick_counter, tick_threshold);
     wrefresh(window_emu);
 }

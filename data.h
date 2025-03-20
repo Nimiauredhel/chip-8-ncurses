@@ -17,7 +17,7 @@ typedef struct Chip8Registers
     uint8_t DT; // delay timer
     uint8_t SP; // "stack pointer", holds current index for the return addresses array
     uint16_t PC; // program counter
-    uint16_t I_REG; // generally used for RAM addresses
+    uint16_t I_REG : 12; // generally used for RAM addresses
     uint16_t KEYS; // bit field representing the state of all 16 Chip-8 keys
     uint8_t V_REGS[16]; // general purpose registers (except the last one)
     uint16_t STACK_RET[16]; // "stack" - subroutine return addresses
@@ -28,15 +28,19 @@ typedef struct EmulatorState
 {
     // TODO: compress the separate state flags into a single state enum
     bool should_reset;
+    bool loop;
     bool step_mode;
     bool step_pressed;
 
+    struct timespec start_clock;
     uint8_t keys; // bit field representing the state of emulator keys
-    uint16_t step_delay_us;
+    uint16_t ideal_step_delay_us;
+    uint16_t difference_step_delay_us;
     uint32_t step_counter;
     float speed_modifier;
-    float seconds_counter;
-    float avg_fps;
+    float runtime_seconds_counter;
+    float cycle_seconds_counter;
+    float avg_cps;
 } EmulatorState_t;
 
 typedef struct DisplayLayout

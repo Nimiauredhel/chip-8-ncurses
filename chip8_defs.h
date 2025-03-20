@@ -4,7 +4,7 @@
 // *** VM definitions ***
 
 // emulator constants
-#define EMU_DEFAULT_STEP_DELAY_US (16666) // 60hz execution step frequency
+#define EMU_DEFAULT_STEP_DELAY_US (1666) // 500hz execution step frequency
 #define EMU_SPEED_INCREMENT (0.1f)
 #define EMU_MIN_SPEED_MOD (EMU_SPEED_INCREMENT) // 0 hz
 #define EMU_MAX_SPEED_MOD (10.0f)

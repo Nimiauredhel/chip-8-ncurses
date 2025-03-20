@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     initialize_random_seed();
 
     printf("Hello!\n");
-    usleep(500000);
+    usleep(250000);
 
     if (argc < 2)
     {
@@ -43,13 +43,13 @@ int main(int argc, char *argv[])
         {
             Chip8_t *chip8 = create_instance(rom_path);
             printf("Beginning execution.\n");
-            usleep(200000);
+            usleep(250000);
             should_run = run(chip8);
             free(chip8);
         }
     }
 
     printf("Goodbye.\n");
-    usleep(200000);
+    usleep(250000);
     return EXIT_SUCCESS;
 }

@@ -69,23 +69,23 @@ void print_instruction(Chip8Instruction_t *instruction)
     switch(instruction_schemas[instruction->op_idx])
     {
         case OPSCH_NNN:
-            word_arg = PARSE_NNN_TO_U16(instruction->nibbles[1], instruction->nibbles[2], instruction->nibbles[3]);
+            word_arg = PARSE_NNN_TO_U16(instruction->nibble1, instruction->nibble2, instruction->nibble3);
             printf(instruction_formats[instruction->op_idx], word_arg);
             break;
         case OPSCH_XKK:
-            printf(instruction_formats[instruction->op_idx], instruction->nibbles[1], instruction->bytes[1]);
+            printf(instruction_formats[instruction->op_idx], instruction->nibble1, instruction->bytes[1]);
             break;
         case OPSCH_XY_:
-            printf(instruction_formats[instruction->op_idx], instruction->nibbles[1], instruction->nibbles[2]);
+            printf(instruction_formats[instruction->op_idx], instruction->nibble1, instruction->nibble2);
             break;
         case OPSCH_XYN:
-            printf(instruction_formats[instruction->op_idx], instruction->nibbles[1], instruction->nibbles[2], instruction->nibbles[3]);
+            printf(instruction_formats[instruction->op_idx], instruction->nibble1, instruction->nibble2, instruction->nibble3);
             break;
         case OPSCH_X__:
-            printf(instruction_formats[instruction->op_idx], instruction->nibbles[1]);
+            printf(instruction_formats[instruction->op_idx], instruction->nibble1);
             break;
         case OPSCH___N:
-            printf(instruction_formats[instruction->op_idx], instruction->nibbles[3], instruction->bytes[1]);
+            printf(instruction_formats[instruction->op_idx], instruction->nibble3, instruction->bytes[1]);
             break;
         case OPSCH_NONE:
         default:
@@ -96,10 +96,10 @@ void print_instruction(Chip8Instruction_t *instruction)
     printf(" ~ bytes %u, %u ~ nibbles 0x%1X%1X%1X%1X\n",
     instruction->bytes[0],
     instruction->bytes[1],
-    instruction->nibbles[0],
-    instruction->nibbles[1],
-    instruction->nibbles[2],
-    instruction->nibbles[3]);
+    instruction->nibble0,
+    instruction->nibble1,
+    instruction->nibble2,
+    instruction->nibble3);
 }
 
 void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Chip8Instruction_t *instruction)
@@ -109,23 +109,23 @@ void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Chip8In
     switch(instruction_schemas[instruction->op_idx])
     {
         case OPSCH_NNN:
-            word_arg = PARSE_NNN_TO_U16(instruction->nibbles[1],instruction-> nibbles[2], instruction->nibbles[3]);
+            word_arg = PARSE_NNN_TO_U16(instruction->nibble1,instruction-> nibble2, instruction->nibble3);
             mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], word_arg);
             break;
         case OPSCH_XKK:
-            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibbles[1], instruction->bytes[1]);
+            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibble1, instruction->bytes[1]);
             break;
         case OPSCH_XY_:
-            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibbles[1], instruction->nibbles[2]);
+            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibble1, instruction->nibble2);
             break;
         case OPSCH_XYN:
-            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibbles[1], instruction->nibbles[2], instruction->nibbles[3]);
+            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibble1, instruction->nibble2, instruction->nibble3);
             break;
         case OPSCH_X__:
-            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibbles[1]);
+            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibble1);
             break;
         case OPSCH___N:
-            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibbles[3], instruction->bytes[1]);
+            mvwprintw(window_disassembly, row, col, instruction_formats[instruction->op_idx], instruction->nibble3, instruction->bytes[1]);
             break;
         case OPSCH_NONE:
         default:
@@ -138,10 +138,10 @@ void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Chip8In
     " ~ bytes %u, %u ~ nibbles 0x%1X%1X%1X%1X",
     instruction->bytes[0],
     instruction->bytes[1],
-    instruction->nibbles[0],
-    instruction->nibbles[1],
-    instruction->nibbles[2],
-    instruction->nibbles[3]);
+    instruction->nibble0,
+    instruction->nibble1,
+    instruction->nibble2,
+    instruction->nibble3);
     */
 }
 
@@ -154,10 +154,10 @@ void disassemble(Chip8_t *chip8, uint16_t program_end)
         instruction.bytes[0] = chip8->RAM[chip8->registers->PC];
         instruction.bytes[1] = chip8->RAM[chip8->registers->PC + 1];
 
-        instruction.nibbles[0] = instruction.bytes[0] >> 4;
-        instruction.nibbles[1] = instruction.bytes[0] - (instruction.nibbles[0] << 4);
-        instruction.nibbles[2] = instruction.bytes[1] >> 4;
-        instruction.nibbles[3] = instruction.bytes[1] - (instruction.nibbles[2] << 4);
+        instruction.nibble0 = instruction.bytes[0] >> 4;
+        instruction.nibble1 = instruction.bytes[0] - (instruction.nibble0 << 4);
+        instruction.nibble2 = instruction.bytes[1] >> 4;
+        instruction.nibble3 = instruction.bytes[1] - (instruction.nibble2 << 4);
 
         decode_instruction(&instruction);
         printf("[%u] ", chip8->registers->PC);

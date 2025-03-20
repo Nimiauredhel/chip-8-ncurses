@@ -72,11 +72,11 @@ int random_range(int min, int max)
  * Returns the seconds elapsed since a given clock value.
  * Used for timing operations!
  */
-float seconds_since_clock(struct timespec start_clock)
+float seconds_since_clock(struct timespec *start_clock)
 {
     struct timespec now_clock;
     clock_gettime(CLOCK_MONOTONIC, &now_clock);
-    float elapsed_float = (now_clock.tv_nsec - start_clock.tv_nsec) / 1000000000.0;
-    elapsed_float += (now_clock.tv_sec - start_clock.tv_sec);
+    float elapsed_float = (now_clock.tv_nsec - start_clock->tv_nsec) / 1000000000.0;
+    elapsed_float += (now_clock.tv_sec - start_clock->tv_sec);
     return elapsed_float;
 }

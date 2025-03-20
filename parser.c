@@ -70,11 +70,11 @@ void decode_instruction(Chip8Instruction_t *instruction)
     // the 0x00__ instructions
     if (instruction->bytes[0] == 0x00)
     {
-        switch(instruction->nibbles[2])
+        switch(instruction->nibble2)
         {
             // chip 8
             case 0xE:
-                switch(instruction->nibbles[3])
+                switch(instruction->nibble3)
                 {
                     case 0x0:
                         RETURN_OPCODE(OP_CLS);
@@ -87,7 +87,7 @@ void decode_instruction(Chip8Instruction_t *instruction)
             case 0xC:
                 RETURN_OPCODE(OP_SUPER_SCD_NIBBLE); // 00Cn
             case 0xF:
-                switch (instruction->nibbles[3])
+                switch (instruction->nibble3)
                 {
                     case 0xB:
                         RETURN_OPCODE(OP_SUPER_SCR);
@@ -108,7 +108,7 @@ void decode_instruction(Chip8Instruction_t *instruction)
     }
 
     // everything else
-    switch (instruction->nibbles[0])
+    switch (instruction->nibble0)
     {
         case 0x0:
             RETURN_OPCODE(OP_SYS_ADDR); // 0nnn
@@ -128,7 +128,7 @@ void decode_instruction(Chip8Instruction_t *instruction)
             RETURN_OPCODE(OP_ADD_VX_BYTE);
         // in 0x8xy_ opcodes, last nibble determines operand
         case 0x8:
-            switch (instruction->nibbles[3])
+            switch (instruction->nibble3)
             {
                 case 0x0:
                     RETURN_OPCODE(OP_LD_VX_VY);
@@ -160,7 +160,7 @@ void decode_instruction(Chip8Instruction_t *instruction)
         case 0xC:
             RETURN_OPCODE(OP_RND_VX_BYTE);
         case 0xD:
-            RETURN_OPCODE(instruction->nibbles[3] == 0x0
+            RETURN_OPCODE(instruction->nibble3 == 0x0
             ? OP_SUPER_DRW_VX_VY_0
             : OP_DRW_VX_VY_NIBBLE);
         case 0xE:

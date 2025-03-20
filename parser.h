@@ -92,7 +92,10 @@ typedef enum InstructionSchema
 typedef struct Chip8Instruction
 {
     OpcodeIndex_t op_idx;
-    uint8_t nibbles[4];
+    uint8_t nibble0 : 4;
+    uint8_t nibble1 : 4;
+    uint8_t nibble2 : 4;
+    uint8_t nibble3 : 4;
     uint8_t bytes[2];
 } Chip8Instruction_t;
 
