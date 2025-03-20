@@ -7,6 +7,7 @@ void init_display(DisplayLayout_t *layout)
     cbreak();
     nodelay(stdscr, true);
     noecho();
+    raw();
 
     layout->window_chip8 = newwin(CHIP8_DISPLAY_HEIGHT, CHIP8_DISPLAY_WIDTH, 0, 0);
     layout->window_disassembly = newwin(1, 64, 2, CHIP8_DISPLAY_WIDTH);

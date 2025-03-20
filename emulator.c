@@ -110,8 +110,8 @@ void emu_handle_input(Chip8_t *chip8)
     if (check_input8(chip8->emu_state->keys, EMU_KEY_STEP_MODE_IDX))
         chip8->emu_state->step_mode = !chip8->emu_state->step_mode;
 
-    if (check_input8(chip8->emu_state->keys, EMU_KEY_STEP_ONE_IDX))
-        chip8->emu_state->step_pressed = true;
+ /*   if (check_input8(chip8->emu_state->keys, EMU_KEY_STEP_ONE_IDX))
+        chip8->emu_state->step_pressed = true; */
 
     if (check_input8(chip8->emu_state->keys, EMU_KEY_SPEED_UP_IDX))
     {
@@ -152,28 +152,32 @@ bool run(Chip8_t *chip8)
 
     while (chip8->registers->PC < 0xFFF && !should_terminate && !chip8->emu_state->should_reset)
     {
+        // render emulator (mostly timing) stats
+        // TODO: as noted above, make this optional
+        render_emulator_state(chip8->emu_state, chip8->layout.window_emu);
+
+        // render content of Chip-8 & extra VM registers.
+        // TODO: make this optional
+        render_registers(chip8->registers, chip8->layout.window_registers);
         usleep(chip8->emu_state->step_delay_us);
+
+        // updating timing stats
+        // TODO: make the tracking & rendering of stats optional
+        chip8->emu_state->seconds_counter = seconds_since_clock(start_clock);
+        chip8->emu_state->avg_fps = chip8->emu_state->step_counter / chip8->emu_state->seconds_counter;
 
         read_input(&chip8->registers->KEYS, &chip8->emu_state->keys);
         emu_handle_input(chip8);
 
         if (should_terminate) break;
 
-        while (chip8->emu_state->step_mode)
+        if (chip8->emu_state->step_mode
+        && !check_input8(chip8->emu_state->keys, EMU_KEY_STEP_ONE_IDX))
         {
-            usleep(chip8->emu_state->step_delay_us);
-
-            read_input(&chip8->registers->KEYS, &chip8->emu_state->keys);
-            emu_handle_input(chip8);
-
-            if (check_input8(chip8->emu_state->keys, EMU_KEY_STEP_ONE_IDX)) break;
+            continue;
         }
 
-        // updating timing stats
-        // TODO: make the tracking & rendering of stats optional
-        chip8->emu_state->seconds_counter = seconds_since_clock(start_clock);
         chip8->emu_state->step_counter++;
-        chip8->emu_state->avg_fps = chip8->emu_state->step_counter / chip8->emu_state->seconds_counter;
         
         // deincrementing timer registers
         if (chip8->registers->DT > 0) chip8->registers->DT--;
@@ -200,18 +204,10 @@ bool run(Chip8_t *chip8)
         // TODO: figure out if setting a display_dirty flag would be better
         execute_instruction(chip8, chip8->instruction, chip8->layout.window_chip8);
 
-        // render emulator (mostly timing) stats
-        // TODO: as noted above, make this optional
-        render_emulator_state(chip8->emu_state, chip8->layout.window_emu);
-
         // default PC incrementation following execution;
         // jump/skip instructions account for this by decrementing the PC to compensate.
         // TODO: figure out if incrementing in the instruction code could be an improvement
         chip8->registers->PC += 2;
-
-        // render content of Chip-8 & extra VM registers.
-        // TODO: make this optional
-        render_registers(chip8->registers, chip8->layout.window_registers);
     }
 
     usleep(250000);
@@ -253,7 +249,7 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
             break;
         case OP_RET:
             chip8->registers->PC = chip8->registers->STACK_RET[chip8->registers->SP];
-            chip8->registers->PC -= 2;
+            chip8->registers->STACK_RET[chip8->registers->SP] = 0;
             chip8->registers->SP--;
             break;
         case OP_CALL_ADDR:
@@ -306,13 +302,13 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
         case OP_ADD_VX_VY:
             chip8->registers->EMU_TEMP[0].word = chip8->registers->V_REGS[instruction->nibbles[1]]
             + chip8->registers->V_REGS[instruction->nibbles[2]];
-            VF = chip8->registers->EMU_TEMP[0].word > 255 ? 1 : 0; // set VF to 1 if result greater than 255.
+            VF = chip8->registers->EMU_TEMP[0].word > 255; // set VF to 1 if result greater than 255.
             chip8->registers->V_REGS[instruction->nibbles[1]] // setting Vx to the result AND 255,
             = (uint8_t)(chip8->registers->EMU_TEMP[0].word & 255); // to properly discard bits 8 and up
             break;
         case OP_SUB_VX_VY:
             VF = chip8->registers->V_REGS[instruction->nibbles[1]]
-            > chip8->registers->V_REGS[instruction->nibbles[2]] ? 1 : 0;
+            > chip8->registers->V_REGS[instruction->nibbles[2]];
             chip8->registers->V_REGS[instruction->nibbles[1]]
             -= chip8->registers->V_REGS[instruction->nibbles[2]];
             break;
@@ -322,7 +318,7 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
             break;
         case OP_SUBN_VX_VY:
             VF = chip8->registers->V_REGS[instruction->nibbles[2]]
-            > chip8->registers->V_REGS[instruction->nibbles[1]] ? 1 : 0;
+            > chip8->registers->V_REGS[instruction->nibbles[1]];
             chip8->registers->V_REGS[instruction->nibbles[1]]
             = chip8->registers->V_REGS[instruction->nibbles[2]] - chip8->registers->V_REGS[instruction->nibbles[1]];
             break;
@@ -388,9 +384,9 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
                 WRITE_POS_RIGHT = (WRITE_POS_LEFT + CHIP8_DISPLAY_HEIGHT);
 
                 // check for collision (if not collided yet)
-                VF |= (chip8->display_memory[WRITE_POS_LEFT]
+                VF |= 0 < (chip8->display_memory[WRITE_POS_LEFT]
                                    & (chip8->RAM[READ_START + INDEX] >> BIT_OFFSET));
-                VF |= (chip8->display_memory[WRITE_POS_RIGHT]
+                VF |= 0 < (chip8->display_memory[WRITE_POS_RIGHT]
                                    & (chip8->RAM[READ_START + INDEX] << (uint8_t)(8 - BIT_OFFSET)));
                 // TODO: figure out if this works as well as or better than the following:
                 // if (VF == 0) VF
@@ -462,12 +458,8 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
 #define INDEX chip8->registers->EMU_TEMP[0].bytes[1]
 #define Vx chip8->registers->V_REGS[instruction->nibbles[1]]
 
-            DONE = false;
-
-            while (!DONE)
+            if (chip8->registers->KEYS > 0x0)
             {
-                read_input(&chip8->registers->KEYS, &chip8->emu_state->keys);
-
                 for (INDEX = 0; INDEX < 16; INDEX++)
                 {
                     if (check_input16(chip8->registers->KEYS, INDEX))
@@ -477,9 +469,13 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
                         break;
                     }
                 }
-
-                emu_handle_input(chip8);
-                usleep(chip8->emu_state->step_delay_us);
+            }
+            // "halt execution" by repeating this instruction,
+            // and incrementing the delay counter (since it will get decremented)
+            else
+            {
+                chip8->registers->PC -= 2;
+                chip8->registers->DT += 1;
             }
             break;
 #undef KEY
