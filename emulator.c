@@ -45,6 +45,7 @@ bool run(Chip8_t *chip8)
     chip8->emu_state->chip8_timers_counter = 0.016666667f;
 
     init_display(&chip8->layout);
+    chip8->audio_stream = init_audio();
     render_display(chip8, chip8->layout.window_chip8);
     render_registers(chip8->registers, chip8->layout.window_registers);
     render_emulator_state(chip8->emu_state, chip8->layout.window_emu);
@@ -109,7 +110,11 @@ bool run(Chip8_t *chip8)
             {
                 chip8->emu_state->chip8_timers_counter = 0.016666667f;
                 if (chip8->registers->DT > 0) chip8->registers->DT--;
-                if (chip8->registers->ST > 0) chip8->registers->ST--;
+                if (chip8->registers->ST > 0)
+                {
+                    if (--chip8->registers->ST == 0)
+                        set_audio(chip8->audio_stream, false);
+                }
             }
         }
 
@@ -130,12 +135,18 @@ bool run(Chip8_t *chip8)
     }
 
     usleep(250000);
+
+    if (chip8->registers->ST > 0)
+        set_audio(chip8->audio_stream, false);
+    deinit_audio(chip8->audio_stream);
     
     delwin(chip8->layout.window_chip8);
     delwin(chip8->layout.window_disassembly);
     delwin(chip8->layout.window_registers);
     delwin(chip8->layout.window_emu);
+
     endwin();
+
     printf(chip8->registers->PC >= 0xFFF ? "PC out of bounds!\n" : chip8->emu_state->should_reset ? "Restarting!\n" : "Program over!\n");
     usleep(500000);
 
@@ -403,8 +414,10 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
             = chip8->registers->V_REGS[instruction->nibble1];
             break;
         case OP_LD_ST_VX:
-            chip8->registers->ST
-            = chip8->registers->V_REGS[instruction->nibble1];
+            if (chip8->registers->ST != Vx)
+            {
+                set_audio(chip8->audio_stream, (chip8->registers->ST = Vx) > 0);
+            }
             break;
         case OP_ADD_I_VX:
             chip8->registers->I_REG

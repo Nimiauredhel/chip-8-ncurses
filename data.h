@@ -4,6 +4,7 @@
 #include "common.h"
 #include "parser.h"
 #include "chip8_defs.h"
+#include "audio.h"
 
 typedef union ComboRegister
 {
@@ -58,6 +59,7 @@ typedef struct Chip8
     Chip8Registers_t *registers;
     uint8_t *display_memory;
     Chip8Instruction_t *instruction;
+    PaStream *audio_stream;
     DisplayLayout_t layout;
     uint8_t RAM[CHIP8_RAM_BYTES];
 } Chip8_t;

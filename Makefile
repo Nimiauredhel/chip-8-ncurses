@@ -1,7 +1,7 @@
 PROGRAM=program
 FLAGS= -std=c99 -Wall -pedantic -Wextra -fshort-enums
 ARGS=
-INC=-lncurses
+INC=-lncurses -lportaudio
 
 default:
 	gcc *.c $(INC) $(FLAGS) -o $(PROGRAM).o
