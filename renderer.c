@@ -67,7 +67,6 @@ void render_registers(Chip8Registers_t *registers, WINDOW *window_registers)
     {
         mvwprintw(window_registers, i+1, 1, "V%d[%u]", i, registers->V_REGS[i]);
         mvwprintw(window_registers, i+1, 49, "STACK_RET%d[%u]", i, registers->STACK_RET[i]);
-        //mvwprintw(window_registers, (i/4)+11, (10*(i%4))+9, "Key%X[%s] ", i, registers->KEYS & (1 << i) ? "ON" : "off");
     }
 
     mvwprintw(window_registers, 1, 9, "PC[%u] ", registers->PC);
@@ -97,6 +96,12 @@ void render_emulator_state(EmulatorState_t *emu_state, WINDOW *window_emu)
     mvwprintw(window_emu, 2, 1, "Step Counter[%u]", emu_state->step_counter);
     mvwprintw(window_emu, 3, 1, "Runtime[%.2fs]", emu_state->runtime_seconds_counter);
     mvwprintw(window_emu, 4, 1, "Avg. FPS[%.2f]", emu_state->avg_cps);
+
+    for (int i = 0; i < CHIP8_KEY_COUNT; i++)
+    {
+        mvwprintw(window_emu, (i/4)+1, (8*(i%4))+24, "%s[%u] ", chip8_key_names[i], emu_state->chip8_key_states[i]);
+    }
+
     //mvwprintw(window_emu, 5, 1, "Tick Counter[%u/%u]", tick_counter, tick_threshold);
     wrefresh(window_emu);
 }

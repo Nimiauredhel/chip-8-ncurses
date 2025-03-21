@@ -5,6 +5,7 @@
 #include "data.h"
 #include "chip8_defs.h"
 #include "disassembler.h"
+#include "input.h"
 
 void init_display(DisplayLayout_t *layout);
 void render_display(Chip8_t *chip8, WINDOW *window_chip8);
