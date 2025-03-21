@@ -35,11 +35,12 @@ typedef struct EmulatorState
     uint16_t emu_key_states[EMU_KEY_COUNT];
     uint16_t chip8_key_states[CHIP8_KEY_COUNT];
     uint16_t ideal_step_delay_us;
-    uint16_t difference_step_delay_us;
+    int16_t difference_step_delay_us;
     uint32_t step_counter;
     float speed_modifier;
     float runtime_seconds_counter;
     float cycle_seconds_counter;
+    float chip8_timers_counter;
     float avg_cps;
 } EmulatorState_t;
 

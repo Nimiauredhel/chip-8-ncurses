@@ -42,6 +42,7 @@ bool run(Chip8_t *chip8)
     chip8->emu_state->step_counter = 0;
     chip8->emu_state->runtime_seconds_counter = 0.0f;
     chip8->emu_state->cycle_seconds_counter = 0.0f;
+    chip8->emu_state->chip8_timers_counter = 0.016666667f;
 
     init_display(&chip8->layout);
     render_display(chip8, chip8->layout.window_chip8);
@@ -106,21 +107,25 @@ bool run(Chip8_t *chip8)
             // TODO: figure out if incrementing in the instruction code could be an improvement
             chip8->registers->PC += 2;
             // deincrementing timer registers
-            if (chip8->registers->DT > 0) chip8->registers->DT--;
-            if (chip8->registers->ST > 0) chip8->registers->ST--;
+            if (chip8->emu_state->chip8_timers_counter <= 0.0f)
+            {
+                chip8->emu_state->chip8_timers_counter = 0.016666667f;
+                if (chip8->registers->DT > 0) chip8->registers->DT--;
+                if (chip8->registers->ST > 0) chip8->registers->ST--;
+            }
         }
 
-        // updating timing stats
+        // timing the cycle and compensating as necessary
         chip8->emu_state->cycle_seconds_counter = seconds_since_clock(&chip8->emu_state->start_clock);
-
         chip8->emu_state->difference_step_delay_us = chip8->emu_state->ideal_step_delay_us - (1000000 * chip8->emu_state->cycle_seconds_counter);
 
         if (chip8->emu_state->difference_step_delay_us > 0)
         {
             usleep(chip8->emu_state->difference_step_delay_us);
+            chip8->emu_state->cycle_seconds_counter = seconds_since_clock(&chip8->emu_state->start_clock);
         }
 
-        chip8->emu_state->cycle_seconds_counter = seconds_since_clock(&chip8->emu_state->start_clock);
+        chip8->emu_state->chip8_timers_counter -= chip8->emu_state->cycle_seconds_counter;
         chip8->emu_state->runtime_seconds_counter += chip8->emu_state->cycle_seconds_counter;
         chip8->emu_state->avg_cps = chip8->emu_state->avg_cps == 0.0f ? 1.0f / chip8->emu_state->cycle_seconds_counter
         : ((1.0f / chip8->emu_state->cycle_seconds_counter) + chip8->emu_state->avg_cps) / 2.0f;
@@ -342,14 +347,14 @@ void execute_instruction(Chip8_t *chip8, Chip8Instruction_t *instruction, WINDOW
         case OP_SKP_VX:
             // if key pressed equals value of Vx, skip next instruction
             // TODO: consider combining this instruction and the next with fallthrough
-            if (check_input(chip8->emu_state->emu_key_states, instruction->nibble1))
+            if (check_input(chip8->emu_state->chip8_key_states, Vx))
             {
                 chip8->registers->PC += 2;
             }
             break;
         case OP_SKNP_VX:
             // if key pressed does not equal value of Vx, skip next instruction
-            if (!check_input(chip8->emu_state->emu_key_states, instruction->nibble1))
+            if (!check_input(chip8->emu_state->chip8_key_states, Vx))
             {
                 chip8->registers->PC += 2;
             }

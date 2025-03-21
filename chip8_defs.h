@@ -19,7 +19,7 @@
 // TODO: maybe tighten this up later when the sizes are stable
 #define CHIP8_RAM_BYTES (4096)
 #define CHIP8_RAM_SPRITES_START   (0x050) // 80 - 159, 80B
-#define CHIP8_RAM_EMU_STATE_START (0x15D) // 349 - 444, 96B
+#define CHIP8_RAM_EMU_STATE_START (0x159) // 345 - 444, 100B
 #define CHIP8_RAM_REGISTERS_START   (0x1BD) // 445 - 506, 62B
 #define CHIP8_RAM_INSTRUCTION_START   (0x1FB) // 507 - 511, 5B parsed instruction storage
 #define CHIP8_RAM_PROGRAM_START   (0x200) // 512 - 3840, 3328B
