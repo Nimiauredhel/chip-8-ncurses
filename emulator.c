@@ -47,11 +47,9 @@ bool run(Chip8_t *chip8)
     init_display(&chip8->layout);
     render_display(chip8, chip8->layout.window_chip8);
     render_registers(chip8->registers, chip8->layout.window_registers);
-    render_disassembly(chip8->instruction, chip8->layout.window_disassembly);
     render_emulator_state(chip8->emu_state, chip8->layout.window_emu);
 
     usleep(chip8->emu_state->ideal_step_delay_us);
-
 
     while (chip8->registers->PC < 0xFFF && !should_terminate && !chip8->emu_state->should_reset)
     {

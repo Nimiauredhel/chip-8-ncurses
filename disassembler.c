@@ -145,6 +145,38 @@ void mvwprintw_instruction(WINDOW *window_disassembly, int row, int col, Chip8In
     */
 }
 
+void snprintf_instruction(char *dest, size_t maxlen, Chip8Instruction_t *instruction)
+{
+    static uint16_t word_arg = 0;
+
+    switch(instruction_schemas[instruction->op_idx])
+    {
+        case OPSCH_NNN:
+            word_arg = PARSE_NNN_TO_U16(instruction->nibble1,instruction-> nibble2, instruction->nibble3);
+            snprintf(dest, maxlen, instruction_formats[instruction->op_idx], word_arg);
+            break;
+        case OPSCH_XKK:
+            snprintf(dest, maxlen, instruction_formats[instruction->op_idx], instruction->nibble1, instruction->bytes[1]);
+            break;
+        case OPSCH_XY_:
+            snprintf(dest, maxlen, instruction_formats[instruction->op_idx], instruction->nibble1, instruction->nibble2);
+            break;
+        case OPSCH_XYN:
+            snprintf(dest, maxlen, instruction_formats[instruction->op_idx], instruction->nibble1, instruction->nibble2, instruction->nibble3);
+            break;
+        case OPSCH_X__:
+            snprintf(dest, maxlen, instruction_formats[instruction->op_idx], instruction->nibble1);
+            break;
+        case OPSCH___N:
+            snprintf(dest, maxlen, instruction_formats[instruction->op_idx], instruction->nibble3, instruction->bytes[1]);
+            break;
+        case OPSCH_NONE:
+        default:
+            snprintf(dest, maxlen, "%s", instruction_formats[instruction->op_idx]);
+            break;
+    }
+}
+
 void disassemble(Chip8_t *chip8, uint16_t program_end)
 {
     Chip8Instruction_t instruction;

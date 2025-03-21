@@ -27,9 +27,9 @@ void init_display(DisplayLayout_t *layout)
     cbreak();
 
     layout->window_chip8 = newwin(CHIP8_DISPLAY_HEIGHT, CHIP8_DISPLAY_WIDTH, 0, 0);
-    layout->window_disassembly = newwin(1, 64, 2, CHIP8_DISPLAY_WIDTH);
-    layout->window_registers = newwin(18, 64, 5, CHIP8_DISPLAY_WIDTH);
-    layout->window_emu = newwin(8, 64, CHIP8_DISPLAY_HEIGHT - 8, CHIP8_DISPLAY_WIDTH);
+    layout->window_disassembly = newwin(4, 64, 0, CHIP8_DISPLAY_WIDTH+1);
+    layout->window_registers = newwin(18, 64, 5, CHIP8_DISPLAY_WIDTH+1);
+    layout->window_emu = newwin(8, 64, CHIP8_DISPLAY_HEIGHT - 8, CHIP8_DISPLAY_WIDTH+1);
 
     start_color();
     
@@ -38,6 +38,8 @@ void init_display(DisplayLayout_t *layout)
     init_pair(COLOR_PAIR_TEXT_YELLOW, COLOR_YELLOW, COLOR_BLACK);
     init_pair(COLOR_PAIR_TEXT_RED, COLOR_RED, COLOR_BLACK);
     init_pair(COLOR_PAIR_BG_YELLOW, COLOR_BLACK, COLOR_YELLOW);
+    init_pair(COLOR_PAIR_TEXT_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(COLOR_PAIR_TEXT_CYAN, COLOR_CYAN, COLOR_BLACK);
 }
 
 void render_display(Chip8_t *chip8, WINDOW *window_chip8)
@@ -72,9 +74,29 @@ void render_display(Chip8_t *chip8, WINDOW *window_chip8)
 
 void render_disassembly(Chip8Instruction_t *instruction, WINDOW *window_disassembly)
 {
+    static char line_memory[16][16] = {0};
+    static int8_t tail_idx = 0;
+    int8_t idx = tail_idx;
+
+    snprintf_instruction(line_memory[tail_idx], 16, instruction);
+
     werase(window_disassembly);
 
-    mvwprintw_instruction(window_disassembly, 0, 1, instruction);
+    wattron(window_disassembly, COLOR_PAIR(COLOR_PAIR_BG_YELLOW));
+    mvwprintw(window_disassembly, 3, 2, "%s", line_memory[idx]);
+    wattroff(window_disassembly, COLOR_PAIR(COLOR_PAIR_BG_YELLOW));
+
+    for (uint8_t i = 1; i < 16; i++)
+    {
+        idx = tail_idx - i;
+        if (idx < 0) idx += 16;
+        wattron(window_disassembly, COLOR_PAIR(COLOR_PAIR_TEXT_MAGENTA + (idx % 2)));
+        mvwprintw(window_disassembly, 3-(i%4), 2 + (12*(i/4)), "%s", line_memory[idx]);
+        wattroff(window_disassembly, COLOR_PAIR(COLOR_PAIR_TEXT_MAGENTA + (idx % 2)));
+    }
+
+    tail_idx++;
+    if (tail_idx > 15) tail_idx = 0;
 
     wrefresh(window_disassembly);
 }
@@ -82,7 +104,6 @@ void render_disassembly(Chip8Instruction_t *instruction, WINDOW *window_disassem
 void render_registers(Chip8Registers_t *registers, WINDOW *window_registers)
 {
     int8_t color_pair_idx = 0;
-
 
     werase(window_registers);
     box(window_registers, 0, 0);

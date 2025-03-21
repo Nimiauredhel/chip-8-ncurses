@@ -11,7 +11,9 @@
 #define COLOR_PAIR_DISPLAY_OFF 2
 #define COLOR_PAIR_TEXT_YELLOW 3
 #define COLOR_PAIR_TEXT_RED 4
-#define COLOR_PAIR_BG_YELLOW 5
+#define COLOR_PAIR_TEXT_MAGENTA 5
+#define COLOR_PAIR_TEXT_CYAN 6
+#define COLOR_PAIR_BG_YELLOW 10
 
 void init_display(DisplayLayout_t *layout);
 void render_display(Chip8_t *chip8, WINDOW *window_chip8);
