@@ -22,15 +22,22 @@ const uint8_t chip8_default_sprites[CHIP8_DEFAULT_SPRITES_SIZE] =
 
 Chip8_t *create_instance(char *rom_path)
 {
-    printf("Initializing CHIP-8 instance.");
+    printf("Initializing CHIP-8 instance.\n");
     Chip8_t *chip8 = malloc(sizeof(Chip8_t));
     explicit_bzero(chip8, sizeof(Chip8_t));
+
+    printf("Storing %lu bytes of interpreter data in the lower 512 bytes of CHIP-8 memory.\n",
+            sizeof(Chip8Instruction_t) + sizeof(Chip8Registers_t) + sizeof(EmulatorState_t) + 80);
     usleep(100000);
 
-    chip8->emu_state = (EmulatorState_t *)(chip8->RAM + CHIP8_RAM_EMU_STATE_START);
+    /*printf("The size of EmulatorState_t is %lu.\n", sizeof(EmulatorState_t));
+    printf("The size of Chip8Registers_t is %lu.\n", sizeof(Chip8Registers_t));
+    printf("The size of Chip8Instruction_t is %lu.\n", sizeof(Chip8Instruction_t));*/
+
     chip8->display_memory = (chip8->RAM + CHIP8_RAM_DISPLAY_START);
-    chip8->registers = (Chip8Registers_t *)(chip8->RAM + CHIP8_RAM_REGISTERS_START);
     chip8->instruction = (Chip8Instruction_t *)(chip8->RAM + CHIP8_RAM_INSTRUCTION_START);
+    chip8->registers = (Chip8Registers_t *)(chip8->RAM + CHIP8_RAM_REGISTERS_START);
+    chip8->emu_state = (EmulatorState_t *)(chip8->RAM + CHIP8_RAM_EMU_STATE_START);
 
     load_default_sprites(chip8);
     printf("Loaded default sprites.\n");

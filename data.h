@@ -18,7 +18,6 @@ typedef struct Chip8Registers
     uint8_t SP; // "stack pointer", holds current index for the return addresses array
     uint16_t PC; // program counter
     uint16_t I_REG : 12; // generally used for RAM addresses
-    uint16_t KEYS; // bit field representing the state of all 16 Chip-8 keys
     uint8_t V_REGS[16]; // general purpose registers (except the last one)
     uint16_t STACK_RET[16]; // "stack" - subroutine return addresses
     ComboRegister_t EMU_TEMP[3]; // three 16 bit (or six 8 bit) registers I added for the instructions to use
@@ -33,7 +32,8 @@ typedef struct EmulatorState
     bool step_pressed;
 
     struct timespec start_clock;
-    uint8_t keys; // bit field representing the state of emulator keys
+    uint16_t emu_key_states[EMU_KEY_COUNT];
+    uint16_t chip8_key_states[CHIP8_KEY_COUNT];
     uint16_t ideal_step_delay_us;
     uint16_t difference_step_delay_us;
     uint32_t step_counter;

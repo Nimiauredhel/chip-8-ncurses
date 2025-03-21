@@ -68,7 +68,7 @@ void render_registers(Chip8Registers_t *registers, WINDOW *window_registers)
     {
         mvwprintw(window_registers, i+1, 1, "V%d[%u]", i, registers->V_REGS[i]);
         mvwprintw(window_registers, i+1, 49, "STACK_RET%d[%u]", i, registers->STACK_RET[i]);
-        mvwprintw(window_registers, (i/4)+11, (10*(i%4))+9, "Key%X[%s] ", i, registers->KEYS & (1 << i) ? "ON" : "off");
+        //mvwprintw(window_registers, (i/4)+11, (10*(i%4))+9, "Key%X[%s] ", i, registers->KEYS & (1 << i) ? "ON" : "off");
     }
 
     mvwprintw(window_registers, 1, 9, "PC[%u] ", registers->PC);

@@ -8,6 +8,8 @@
 #define EMU_SPEED_INCREMENT (0.1f)
 #define EMU_MIN_SPEED_MOD (EMU_SPEED_INCREMENT) // 0 hz
 #define EMU_MAX_SPEED_MOD (10.0f)
+#define EMU_KEY_COUNT 7
+#define CHIP8_KEY_COUNT 17
 
 // *** CHIP-8 definitions ***
 
@@ -16,12 +18,12 @@
 // map of VM memory utilization up to the 0x200 program start point
 // TODO: maybe tighten this up later when the sizes are stable
 #define CHIP8_RAM_BYTES (4096)
-#define CHIP8_RAM_EMU_STATE_START (0x000) // 0 - ??<80, ??<80B
 #define CHIP8_RAM_SPRITES_START   (0x050) // 80 - 159, 80B
-#define CHIP8_RAM_DISPLAY_START   (0x0A0) // 160 - 415, 256B
-#define CHIP8_RAM_REGISTERS_START   (0x1A4) // 420 - ~481, ~62B
-#define CHIP8_RAM_INSTRUCTION_START   (0x1F4) // 500 - 511, 12B parsed instruction storage
-#define CHIP8_RAM_PROGRAM_START   (0x200) // 512 - 4095
+#define CHIP8_RAM_EMU_STATE_START (0x15D) // 349 - 444, 96B
+#define CHIP8_RAM_REGISTERS_START   (0x1BD) // 445 - 506, 62B
+#define CHIP8_RAM_INSTRUCTION_START   (0x1FB) // 507 - 511, 5B parsed instruction storage
+#define CHIP8_RAM_PROGRAM_START   (0x200) // 512 - 3840, 3328B
+#define CHIP8_RAM_DISPLAY_START   (0xF00) // 3840 - 4095, 256B
 
 // sprites
 #define CHIP8_DEFAULT_SPRITES_COUNT (16)
